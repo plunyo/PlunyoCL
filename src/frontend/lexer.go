@@ -26,158 +26,148 @@ func NewLexer(sourceCode string) *Lexer {
 	}
 }
 
-func (l *Lexer) Advance() {
-	l.pos++
+func (lexer *Lexer) Advance() {
+	lexer.pos++
 
-	if l.pos >= len(l.sourceCode) {
-		l.currentChar = 0
+	if lexer.pos >= len(lexer.sourceCode) {
+		lexer.currentChar = 0
 	} else {
-		l.currentChar = l.sourceCode[l.pos]
+		lexer.currentChar = lexer.sourceCode[lexer.pos]
 	}
 }
 
-func (l *Lexer) Eat() byte {
-	c := l.currentChar
-	l.Advance()
-
+func (lexer *Lexer) Eat() byte {
+	c := lexer.currentChar
+	lexer.Advance()
 	return c
 }
 
-func (l *Lexer) Peek() byte {
-	np := l.pos + 1
-	if np >= len(l.sourceCode) {
+func (lexer *Lexer) Peek() byte {
+	np := lexer.pos + 1
+	if np >= len(lexer.sourceCode) {
 		return 0
 	}
-
-	return l.sourceCode[np]
+	return lexer.sourceCode[np]
 }
 
-func (l *Lexer) Tokenize() []Token {
+func (lexer *Lexer) Tokenize() []Token {
 	var tokens []Token
 
 	add := func(tType TokenType, val string) {
 		tokens = append(tokens, Token{Type: tType, Value: val})
 	}
 
-	l.Advance()
+	lexer.Advance()
 
-	for l.currentChar != 0 {
-		switch l.currentChar {
+	for lexer.currentChar != 0 {
+		switch lexer.currentChar {
 
-		// one char shit
+		// one char stuff
 		case '+':
-			add(Plus, string(l.Eat()))
+			add(PlusToken, string(lexer.Eat()))
 			continue
 		case '-':
-			add(Minus, string(l.Eat()))
+			add(MinusToken, string(lexer.Eat()))
 			continue
 		case '*':
-			add(Star, string(l.Eat()))
+			add(StarToken, string(lexer.Eat()))
 			continue
 		case '%':
-			add(Percent, string(l.Eat()))
+			add(PercentToken, string(lexer.Eat()))
 			continue
 		case '(':
-			add(LParen, string(l.Eat()))
+			add(LParenToken, string(lexer.Eat()))
 			continue
 		case ')':
-			add(RParen, string(l.Eat()))
+			add(RParenToken, string(lexer.Eat()))
 			continue
 		case '{':
-			add(LBrace, string(l.Eat()))
+			add(LBraceToken, string(lexer.Eat()))
 			continue
 		case '}':
-			add(RBrace, string(l.Eat()))
+			add(RBraceToken, string(lexer.Eat()))
 			continue
 		case '[':
-			add(LBracket, string(l.Eat()))
+			add(LBracketToken, string(lexer.Eat()))
 			continue
 		case ']':
-			add(RBracket, string(l.Eat()))
+			add(RBracketToken, string(lexer.Eat()))
 			continue
 		case ';':
-			add(Semicolon, string(l.Eat()))
+			add(SemicolonToken, string(lexer.Eat()))
 			continue
 		case ',':
-			add(Comma, string(l.Eat()))
+			add(CommaToken, string(lexer.Eat()))
 			continue
 		case '.':
-			add(Dot, string(l.Eat()))
+			add(DotToken, string(lexer.Eat()))
 			continue
 
 		// slash could be division or line comment //
 		case '/':
-			if l.Peek() == '/' {
-				// consume the '//' and skip to end of line
-				l.Eat() // '/'
-				l.Eat() // second '/'
-
-				for l.currentChar != 0 && l.currentChar != '\n' {
-					l.Advance()
+			if lexer.Peek() == '/' {
+				lexer.Eat()
+				lexer.Eat()
+				for lexer.currentChar != 0 && lexer.currentChar != '\n' {
+					lexer.Advance()
 				}
-
 				continue
 			}
-
-			add(Slash, string(l.Eat()))
+			add(SlashToken, string(lexer.Eat()))
 			continue
 
 		// comparisons and multi-char operators
 		case '=':
-			l.Advance()
-			if l.currentChar == '=' {
-				l.Advance()
-				add(DoubleEqual, "==")
+			lexer.Advance()
+			if lexer.currentChar == '=' {
+				lexer.Advance()
+				add(DoubleEqualToken, "==")
 			} else {
-				add(Equal, "=")
+				add(EqualToken, "=")
 			}
-
 			continue
 		case '<':
-			l.Advance()
-			if l.currentChar == '=' {
-				l.Advance()
-				add(LessEqual, "<=")
+			lexer.Advance()
+			if lexer.currentChar == '=' {
+				lexer.Advance()
+				add(LessEqualToken, "<=")
 			} else {
-				add(LessThan, "<")
+				add(LessThanToken, "<")
 			}
-
 			continue
 		case '>':
-			l.Advance()
-			if l.currentChar == '=' {
-				l.Advance()
-				add(GreaterEqual, ">=")
+			lexer.Advance()
+			if lexer.currentChar == '=' {
+				lexer.Advance()
+				add(GreaterEqualToken, ">=")
 			} else {
-				add(GreaterThan, ">")
+				add(GreaterThanToken, ">")
 			}
-
 			continue
 		case '!':
-			l.Advance()
-			if l.currentChar == '=' {
-				l.Advance()
-				add(NotEqual, "!=")
+			lexer.Advance()
+			if lexer.currentChar == '=' {
+				lexer.Advance()
+				add(NotEqualToken, "!=")
 			} else {
-				add(Not, "!")
+				add(NotToken, "!")
 			}
-
 			continue
 
 		// whitespace -> skip
 		case ' ', '\t', '\n', '\r':
-			l.Advance()
+			lexer.Advance()
 			continue
 
-		// string literal (double quotes) with basic escapes
+		// string literal
 		case '"':
-			l.Eat() // consume opening quote
+			lexer.Eat()
 			var b strings.Builder
-
-			for l.currentChar != 0 && l.currentChar != '"' {
-				if l.currentChar == '\\' && l.Peek() != 0 {
-					l.Eat() // consume backslash
-					switch l.currentChar {
+			
+			for lexer.currentChar != 0 && lexer.currentChar != '"' {
+				if lexer.currentChar == '\\' && lexer.Peek() != 0 {
+					lexer.Eat()
+					switch lexer.currentChar {
 					case 'n':
 						b.WriteByte('\n')
 					case 't':
@@ -187,88 +177,76 @@ func (l *Lexer) Tokenize() []Token {
 					case '\\':
 						b.WriteByte('\\')
 					default:
-						// unknown escape: keep literal char
-						b.WriteByte(l.currentChar)
+						b.WriteByte(lexer.currentChar)
 					}
-					l.Advance() // move after escaped char
-
+					lexer.Advance()
 					continue
 				}
-
-				b.WriteByte(l.currentChar)
-				l.Advance()
+				b.WriteByte(lexer.currentChar)
+				lexer.Advance()
 			}
-
-			if l.currentChar == '"' {
-				l.Eat() // consume closing quote
+			if lexer.currentChar == '"' {
+				lexer.Eat()
 			}
-
-			add(String, b.String())
+			add(StringToken, b.String())
 			continue
 
 		default:
-			// numbers (integers + optional fractional part)
-			if isDigit(l.currentChar) {
+			// numbers
+			if isDigit(lexer.currentChar) {
 				var b strings.Builder
-				
-				for isDigit(l.currentChar) {
-					b.WriteByte(l.currentChar)
-					l.Advance()
+				for isDigit(lexer.currentChar) {
+					b.WriteByte(lexer.currentChar)
+					lexer.Advance()
 				}
-
-				if l.currentChar == '.' && isDigit(l.Peek()) {
+				if lexer.currentChar == '.' && isDigit(lexer.Peek()) {
 					b.WriteByte('.')
-					l.Advance()
-
-					for isDigit(l.currentChar) {
-						b.WriteByte(l.currentChar)
-						l.Advance()
+					lexer.Advance()
+					for isDigit(lexer.currentChar) {
+						b.WriteByte(lexer.currentChar)
+						lexer.Advance()
 					}
 				}
-				add(Number, b.String())
+				add(NumberToken, b.String())
 				continue
 			}
 
 			// identifiers & keywords
-			if isLetter(l.currentChar) {
+			if isLetter(lexer.currentChar) {
 				var b strings.Builder
-
-				for isLetter(l.currentChar) || isDigit(l.currentChar) {
-					b.WriteByte(l.currentChar)
-					l.Advance()
+				for isLetter(lexer.currentChar) || isDigit(lexer.currentChar) {
+					b.WriteByte(lexer.currentChar)
+					lexer.Advance()
 				}
-
 				idStr := b.String()
-
 				switch idStr {
-					case "var":
-						add(Var, idStr)
-					case "const":
-						add(Const, idStr)
-					case "if":
-						add(If, idStr)
-					case "else":
-						add(Else, idStr)
-					case "for":
-						add(For, idStr)
-					case "while":
-						add(While, idStr)
-					case "func":
-						add(Func, idStr)
-					case "return":
-						add(Return, idStr)
-					default:
-						add(Identifier, idStr)
+				case "var":
+					add(VarToken, idStr)
+				case "const":
+					add(ConstToken, idStr)
+				case "if":
+					add(IfToken, idStr)
+				case "else":
+					add(ElseToken, idStr)
+				case "for":
+					add(ForToken, idStr)
+				case "while":
+					add(WhileToken, idStr)
+				case "func":
+					add(FuncToken, idStr)
+				case "return":
+					add(ReturnToken, idStr)
+				default:
+					add(IdentifierToken, idStr)
 				}
-
 				continue
 			}
 
-			fmt.Printf("unrecognized character '%c' at pos %d\n", l.currentChar, l.pos)
-			l.Advance()
+			fmt.Printf("unrecognized character '%c' at pos %d\n", lexer.currentChar, lexer.pos)
+			lexer.Advance()
 		}
 	}
 
-	add(EOF, "EOF")
+	add(EOFToken, "EOF")
 	return tokens
 }

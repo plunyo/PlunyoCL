@@ -6,53 +6,53 @@ type TokenType int
 
 const (
 	// literals / identifiers
-	Identifier TokenType = iota
-	Number
-	String
+	IdentifierToken TokenType = iota
+	NumberToken
+	StringToken
 
 	// operators
-	Plus
-	Minus
-	Star
-	Slash
-	Percent
-	Equal
-	DoubleEqual
-	Not
-	NotEqual
-	LessThan
-	LessEqual
-	GreaterThan
-	GreaterEqual
-	Or
-	And
+	PlusToken
+	MinusToken
+	StarToken
+	SlashToken
+	PercentToken
+	EqualToken
+	DoubleEqualToken
+	NotToken
+	NotEqualToken
+	LessThanToken
+	LessEqualToken
+	GreaterThanToken
+	GreaterEqualToken
+	OrToken
+	AndToken
 
 	// punctuation
-	LParen
-	RParen
-	LBrace
-	RBrace
-	LBracket
-	RBracket
-	Semicolon
-	Comma
-	Dot
+	LParenToken
+	RParenToken
+	LBraceToken
+	RBraceToken
+	LBracketToken
+	RBracketToken
+	SemicolonToken
+	CommaToken
+	DotToken
 
 	// keywords
-	Var
-	Const
-	If
-	Else
-	For
-	While
-	Func
-	Return
+	VarToken
+	ConstToken
+	IfToken
+	ElseToken
+	ForToken
+	WhileToken
+	FuncToken
+	ReturnToken
 
 	// whitespace/comments
-	Comment
+	CommentToken
 
 	// special
-	EOF
+	EOFToken
 )
 
 type Token struct {
@@ -60,66 +60,65 @@ type Token struct {
 	Value string
 }
 
-func (t TokenType) String() string {
+func (token TokenType) String() string {
 	names := [...]string{
 		// literals / identifiers
-		"Identifier",
-		"Number",
-		"String",
+		"IdentifierToken",
+		"NumberToken",
+		"StringToken",
 
 		// operators
-		"Plus",
-		"Minus",
-		"Star",
-		"Slash",
-		"Percent",
-		"Equal",
-		"DoubleEqual",
-		"Not",
-		"NotEqual",
-		"LessThan",
-		"LessEqual",
-		"GreaterThan",
-		"GreaterEqual",
-		"Or",
-		"And",
+		"PlusToken",
+		"MinusToken",
+		"StarToken",
+		"SlashToken",
+		"PercentToken",
+		"EqualToken",
+		"DoubleEqualToken",
+		"NotToken",
+		"NotEqualToken",
+		"LessThanToken",
+		"LessEqualToken",
+		"GreaterThanToken",
+		"GreaterEqualToken",
+		"OrToken",
+		"AndToken",
 
 		// punctuation
-		"LParen",
-		"RParen",
-		"LBrace",
-		"RBrace",
-		"LBracket",
-		"RBracket",
-		"Semicolon",
-		"Comma",
-		"Dot",
+		"LParenToken",
+		"RParenToken",
+		"LBraceToken",
+		"RBraceToken",
+		"LBracketToken",
+		"RBracketToken",
+		"SemicolonToken",
+		"CommaToken",
+		"DotToken",
 
 		// keywords
-		"Var",
-		"Const",
-		"If",
-		"Else",
-		"For",
-		"While",
-		"Func",
-		"Return",
+		"VarToken",
+		"ConstToken",
+		"IfToken",
+		"ElseToken",
+		"ForToken",
+		"WhileToken",
+		"FuncToken",
+		"ReturnToken",
 
 		// whitespace/comments
-		"Comment",
+		"CommentToken",
 
 		// special
-		"EOF",
+		"EOFToken",
 	}
 
-	if int(t) < 0 || int(t) >= len(names) {
-		return "Unknown"
+	if int(token) < 0 || int(token) >= len(names) {
+		return "UnknownToken"
 	}
-	
-	return names[t]
+
+	return names[token]
 }
 
-func (t Token) String() string {
-	return fmt.Sprintf("Token { Type: %-10s | Value: '%s' }", t.Type, t.Value)
+func (token Token) String() string {
+	return fmt.Sprintf("Token { Type: %-15s | Value: '%s' }", token.Type, token.Value)
 }
-
