@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-// Lexer holds the source and current position state.
 type Lexer struct {
 	sourceCode  string
 	pos         int
@@ -27,9 +26,9 @@ func NewLexer(sourceCode string) *Lexer {
 	}
 }
 
-// Advance moves the cursor forward and updates currentChar (0 == EOF).
 func (l *Lexer) Advance() {
 	l.pos++
+
 	if l.pos >= len(l.sourceCode) {
 		l.currentChar = 0
 	} else {
@@ -37,36 +36,35 @@ func (l *Lexer) Advance() {
 	}
 }
 
-// Eat returns the current char then advances once.
 func (l *Lexer) Eat() byte {
 	c := l.currentChar
 	l.Advance()
+
 	return c
 }
 
-// Peek returns the next char without advancing (or 0 at EOF).
 func (l *Lexer) Peek() byte {
 	np := l.pos + 1
 	if np >= len(l.sourceCode) {
 		return 0
 	}
+
 	return l.sourceCode[np]
 }
 
 func (l *Lexer) Tokenize() []Token {
 	var tokens []Token
 
-	// small helper to append tokens cleanly
 	add := func(tType TokenType, val string) {
 		tokens = append(tokens, Token{Type: tType, Value: val})
 	}
 
-	l.Advance() // initialize currentChar
+	l.Advance()
 
 	for l.currentChar != 0 {
 		switch l.currentChar {
 
-		// single-char operators and punctuation
+		// one char shit
 		case '+':
 			add(Plus, string(l.Eat()))
 			continue
@@ -113,11 +111,14 @@ func (l *Lexer) Tokenize() []Token {
 				// consume the '//' and skip to end of line
 				l.Eat() // '/'
 				l.Eat() // second '/'
+
 				for l.currentChar != 0 && l.currentChar != '\n' {
 					l.Advance()
 				}
+
 				continue
 			}
+
 			add(Slash, string(l.Eat()))
 			continue
 
@@ -130,6 +131,7 @@ func (l *Lexer) Tokenize() []Token {
 			} else {
 				add(Equal, "=")
 			}
+
 			continue
 		case '<':
 			l.Advance()
@@ -139,6 +141,7 @@ func (l *Lexer) Tokenize() []Token {
 			} else {
 				add(LessThan, "<")
 			}
+
 			continue
 		case '>':
 			l.Advance()
@@ -148,6 +151,7 @@ func (l *Lexer) Tokenize() []Token {
 			} else {
 				add(GreaterThan, ">")
 			}
+
 			continue
 		case '!':
 			l.Advance()
@@ -157,6 +161,7 @@ func (l *Lexer) Tokenize() []Token {
 			} else {
 				add(Not, "!")
 			}
+
 			continue
 
 		// whitespace -> skip
@@ -168,6 +173,7 @@ func (l *Lexer) Tokenize() []Token {
 		case '"':
 			l.Eat() // consume opening quote
 			var b strings.Builder
+
 			for l.currentChar != 0 && l.currentChar != '"' {
 				if l.currentChar == '\\' && l.Peek() != 0 {
 					l.Eat() // consume backslash
@@ -185,14 +191,18 @@ func (l *Lexer) Tokenize() []Token {
 						b.WriteByte(l.currentChar)
 					}
 					l.Advance() // move after escaped char
+
 					continue
 				}
+
 				b.WriteByte(l.currentChar)
 				l.Advance()
 			}
+
 			if l.currentChar == '"' {
 				l.Eat() // consume closing quote
 			}
+
 			add(String, b.String())
 			continue
 
@@ -200,13 +210,16 @@ func (l *Lexer) Tokenize() []Token {
 			// numbers (integers + optional fractional part)
 			if isDigit(l.currentChar) {
 				var b strings.Builder
+				
 				for isDigit(l.currentChar) {
 					b.WriteByte(l.currentChar)
 					l.Advance()
 				}
+
 				if l.currentChar == '.' && isDigit(l.Peek()) {
 					b.WriteByte('.')
 					l.Advance()
+
 					for isDigit(l.currentChar) {
 						b.WriteByte(l.currentChar)
 						l.Advance()
@@ -219,36 +232,39 @@ func (l *Lexer) Tokenize() []Token {
 			// identifiers & keywords
 			if isLetter(l.currentChar) {
 				var b strings.Builder
+
 				for isLetter(l.currentChar) || isDigit(l.currentChar) {
 					b.WriteByte(l.currentChar)
 					l.Advance()
 				}
+
 				idStr := b.String()
+
 				switch idStr {
-				case "var":
-					add(Var, idStr)
-				case "const":
-					add(Const, idStr)
-				case "if":
-					add(If, idStr)
-				case "else":
-					add(Else, idStr)
-				case "for":
-					add(For, idStr)
-				case "while":
-					add(While, idStr)
-				case "func":
-					add(Func, idStr)
-				case "return":
-					add(Return, idStr)
-				default:
-					add(Identifier, idStr)
+					case "var":
+						add(Var, idStr)
+					case "const":
+						add(Const, idStr)
+					case "if":
+						add(If, idStr)
+					case "else":
+						add(Else, idStr)
+					case "for":
+						add(For, idStr)
+					case "while":
+						add(While, idStr)
+					case "func":
+						add(Func, idStr)
+					case "return":
+						add(Return, idStr)
+					default:
+						add(Identifier, idStr)
 				}
+
 				continue
 			}
 
-			// unrecognized -> warn and advance so we don't loop forever
-			fmt.Printf("Unrecognized character '%c' at pos %d\n", l.currentChar, l.pos)
+			fmt.Printf("unrecognized character '%c' at pos %d\n", l.currentChar, l.pos)
 			l.Advance()
 		}
 	}

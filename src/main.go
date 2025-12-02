@@ -15,6 +15,7 @@ func main() {
     if len(os.Args) == 2 {
         sourceFile := os.Args[1]
         sourceCode, err := os.ReadFile(sourceFile)
+
         if err != nil {
             fmt.Printf("Error reading file: %v\n", err)
             return
@@ -33,6 +34,7 @@ func main() {
             fmt.Print(">> ")
             var input string
             fmt.Scanln(&input)
+
             if input == "exit" {
                 break
             }
