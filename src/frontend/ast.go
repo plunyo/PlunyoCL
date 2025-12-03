@@ -22,12 +22,10 @@ type ASTNode interface {
 	String() string
 }
 
-// helper: produce indentation
 func indentStr(level int) string {
 	return strings.Repeat("    ", level)
 }
 
-// generic pretty-printer (uses a type switch so concrete nodes are printed with indentation)
 func pretty(node ASTNode, level int) string {
 	if node == nil {
 		return indentStr(level) + "nil"
@@ -77,7 +75,7 @@ func pretty(node ASTNode, level int) string {
 
 		if n.Right == nil {
 			sb.WriteString(indentStr(level+1) + "Right: nil\n")
-// generic pretty-printer (uses a type switch so concrete nodes are printed with indentation)r(level+1) + "Right: nil\n")
+			// generic pretty-printer (uses a type switch so concrete nodes are printed with indentation)r(level+1) + "Right: nil\n")
 		} else {
 			sb.WriteString(indentStr(level+1) + "Right:\n")
 			sb.WriteString(pretty(*n.Right, level+2))

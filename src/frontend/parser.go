@@ -49,6 +49,7 @@ func (parser *Parser) GenerateAST() ASTNode {
 
 func (parser *Parser) parseStatement() ASTNode {
 	tok := parser.peek()
+	
 	if tok == nil {
 		panic("unexpected end of input")
 	}
@@ -77,7 +78,57 @@ func (parser *Parser) parseVarDecl() ASTNode {
 }
 
 func (parser *Parser) parseExpression() ASTNode {
-	return parser.parseLiteral()
+	return parser.parseAdditive()
+}
+
+func (parser *Parser) parseAdditive() ASTNode {
+	left := parser.parseMultiplicative()
+
+	for {
+		token := parser.peek()
+		if token == nil {
+			break
+		}
+
+		if token.Type == PlusToken || token.Type == MinusToken {
+			parser.eat()
+			right := parser.parseMultiplicative()
+
+			left = &BinaryOpNode{
+				Left:     &left,
+				Operator: *token,
+				Right:    &right,
+			}
+		}
+	}
+
+	return left
+}
+
+func (parser *Parser) parseMultiplicative() ASTNode {
+	left := parser.parseLiteral()
+	
+	for {
+		token := parser.peek()
+		if token == nil {
+			break
+		}
+
+		if token.Type == StarToken || token.Type == SlashToken {
+			parser.eat()
+			right := parser.parseLiteral()
+
+			left = &BinaryOpNode{
+				Left:     &left,
+				Operator: *token,
+				Right:    &right,
+			}
+		} else {
+			break
+		}
+	}
+
+	return left
 }
 
 func (parser *Parser) parseLiteral() ASTNode {
