@@ -102,11 +102,8 @@ func (lexer *Lexer) Tokenize() []Token {
 		case '.':
 			add(DotToken, string(lexer.Eat()))
 			continue
-		case '|':
-			add(OrToken, string(lexer.Eat()))
-			continue
-		case '&':
-			add(AndToken, string(lexer.Eat()))
+		case '~':
+			add(BitwiseNotToken, string(lexer.Eat()))
 			continue
 		case '/':
 			if lexer.Peek() == '/' {
@@ -153,7 +150,25 @@ func (lexer *Lexer) Tokenize() []Token {
 				lexer.Advance()
 				add(NotEqualToken, "!=")
 			} else {
-				add(NotToken, "!")
+				add(LogicalNotToken, "!")
+			}
+			continue
+		case '|':
+			lexer.Advance()
+			if lexer.currentChar == '|' {
+				lexer.Advance()
+				add(LogicalOrToken, "||")
+			} else {
+				add(BitwiseOrToken, "|")
+			}
+			continue
+		case '&':
+			lexer.Advance()
+			if lexer.currentChar == '&' {
+				lexer.Advance()
+				add(LogicalAndToken, "&&")
+			} else {
+				add(BitwiseAndToken, "&")
 			}
 			continue
 

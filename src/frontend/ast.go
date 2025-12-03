@@ -5,15 +5,20 @@ import (
 	"strings"
 )
 
+// ---------- AST Node Types ----------
+
 type NodeType int
 
 const (
 	ProgramNodeType NodeType = iota
 	VarDeclNodeType
+	AssignmentNodeType
 	BinaryOpNodeType
 	UnaryOpNodeType
-	NumberLiteralNodeType
+	IntLiteralNodeType
+	FloatLiteralNodeType
 	StringLiteralNodeType
+	BooleanLiteralNodeType
 	IdentifierNodeType
 )
 
@@ -22,8 +27,10 @@ type ASTNode interface {
 	String() string
 }
 
+// ---------- Pretty printing helpers ----------
+
 func indentStr(level int) string {
-	return strings.Repeat("    ", level)
+	return strings.Repeat("  ", level)
 }
 
 func pretty(node ASTNode, level int) string {
@@ -33,154 +40,116 @@ func pretty(node ASTNode, level int) string {
 
 	switch n := node.(type) {
 	case *ProgramNode:
-		var sb strings.Builder
+		sb := &strings.Builder{}
 		sb.WriteString(indentStr(level) + "ProgramNode {\n")
 		for _, stmt := range n.Statements {
-			sb.WriteString(pretty(stmt, level+1))
-			sb.WriteString("\n")
+			sb.WriteString(pretty(stmt, level+1) + ",\n")
 		}
 		sb.WriteString(indentStr(level) + "}")
 		return sb.String()
 
 	case *VarDeclNode:
-		var sb strings.Builder
+		return formatNode("VarDeclNode", level, map[string]ASTNode{
+			"Name":  &IdentifierNode{Name: n.Name},
+			"Value": n.Value,
+		})
 
-		sb.WriteString(indentStr(level) + "VarDeclNode {\n")
-		sb.WriteString(indentStr(level+1) + "Name: " + n.Name + "\n")
-
-		// Value is *ASTNode (pointer to interface) in your definition — handle nil safely
-		if n.Value == nil {
-			sb.WriteString(indentStr(level+1) + "Value: nil\n")
-		} else {
-			sb.WriteString(indentStr(level+1) + "Value:\n")
-			sb.WriteString(pretty(*n.Value, level+2))
-			sb.WriteString("\n")
-		}
-		
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
+	case *AssignmentNode:
+		return formatNode("AssignmentNode", level, map[string]ASTNode{
+			"Name":  &IdentifierNode{Name: n.Name},
+			"Value": n.Value,
+		})
 
 	case *BinaryOpNode:
-		var sb strings.Builder
-		sb.WriteString(indentStr(level) + "BinaryOpNode {\n")
-		sb.WriteString(indentStr(level+1) + "Operator: " + fmt.Sprintf("%v", n.Operator) + "\n")
-
-		if n.Left == nil {
-			sb.WriteString(indentStr(level+1) + "Left: nil\n")
-		} else {
-			sb.WriteString(indentStr(level+1) + "Left:\n")
-			sb.WriteString(pretty(*n.Left, level+2))
-			sb.WriteString("\n")
-		}
-
-		if n.Right == nil {
-			sb.WriteString(indentStr(level+1) + "Right: nil\n")
-			// generic pretty-printer (uses a type switch so concrete nodes are printed with indentation)r(level+1) + "Right: nil\n")
-		} else {
-			sb.WriteString(indentStr(level+1) + "Right:\n")
-			sb.WriteString(pretty(*n.Right, level+2))
-			sb.WriteString("\n")
-		}
-
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
+		return formatNode("BinaryOpNode", level, map[string]ASTNode{
+			"Operator": &LiteralNode[string]{Value: n.Operator},
+			"Left":     n.Left,
+			"Right":    n.Right,
+		})
 
 	case *UnaryOpNode:
-		var sb strings.Builder
-		sb.WriteString(indentStr(level) + "UnaryOpNode {\n")
-		sb.WriteString(indentStr(level+1) + "Operator: " + fmt.Sprintf("%v", n.Operator) + "\n")
+		return formatNode("UnaryOpNode", level, map[string]ASTNode{
+			"Operator": &LiteralNode[string]{Value: n.Operator},
+			"Operand":  n.Operand,
+		})
 
-		if n.Operand == nil {
-			sb.WriteString(indentStr(level+1) + "Operand: nil\n")
-		} else {
-			sb.WriteString(indentStr(level+1) + "Operand:\n")
-			sb.WriteString(pretty(*n.Operand, level+2))
-			sb.WriteString("\n")
-		}
+	case *LiteralNode[int]:
+		return indentStr(level) + fmt.Sprintf("IntLiteralNode { Value: %v }", n.Value)
 
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
+	case *LiteralNode[float64]:
+		return indentStr(level) + fmt.Sprintf("FloatLiteralNode { Value: %v }", n.Value)
 
-	case *NumberLiteralNode:
-		return indentStr(level) + "NumberLiteralNode { Value: " + fmt.Sprintf("%v", n.Value) + " }"
-
-	case *StringLiteralNode:
+	case *LiteralNode[string]:
 		return indentStr(level) + `StringLiteralNode { Value: "` + n.Value + `" }`
 
 	case *IdentifierNode:
 		return indentStr(level) + "IdentifierNode { Name: " + n.Name + " }"
 
 	default:
-		// fallback to the node's String() if it's some other type
 		return indentStr(level) + node.String()
 	}
 }
 
-// ---------- concrete types (String() delegates to pretty with level 0) ----------
-
-// program
-type ProgramNode struct {
-	Statements []ASTNode
+func formatNode(name string, level int, fields map[string]ASTNode) string {
+	sb := &strings.Builder{}
+	sb.WriteString(indentStr(level) + name + " {\n")
+	for k, v := range fields {
+		sb.WriteString(indentStr(level+1) + k + ":\n")
+		sb.WriteString(pretty(v, level+2) + "\n")
+	}
+	sb.WriteString(indentStr(level) + "}")
+	return sb.String()
 }
 
-func (p *ProgramNode) Type() NodeType { return ProgramNodeType }
+// ---------- Concrete AST Nodes ----------
 
+type ProgramNode struct{ Statements []ASTNode }
+func (p *ProgramNode) Type() NodeType { return ProgramNodeType }
 func (p *ProgramNode) String() string { return pretty(p, 0) }
 
-// var declaration
 type VarDeclNode struct {
-	Name    string
-	Value   *ASTNode
+	Name  string
+	Value ASTNode
 }
-
 func (v *VarDeclNode) Type() NodeType { return VarDeclNodeType }
-
 func (v *VarDeclNode) String() string { return pretty(v, 0) }
 
-// binary operation
-type BinaryOpNode struct {
-	Left     *ASTNode
-	Operator Token
-	Right    *ASTNode
+type AssignmentNode struct {
+	Name  string
+	Value ASTNode
 }
+func (a *AssignmentNode) Type() NodeType { return AssignmentNodeType }
+func (a *AssignmentNode) String() string { return pretty(a, 0) }
 
+type BinaryOpNode struct {
+	Left, Right ASTNode
+	Operator    string
+}
 func (b *BinaryOpNode) Type() NodeType { return BinaryOpNodeType }
-
 func (b *BinaryOpNode) String() string { return pretty(b, 0) }
 
-// unary operation
 type UnaryOpNode struct {
-	Operator Token
-	Operand  *ASTNode
+	Operator string
+	Operand  ASTNode
 }
-
 func (u *UnaryOpNode) Type() NodeType { return UnaryOpNodeType }
-
 func (u *UnaryOpNode) String() string { return pretty(u, 0) }
 
-// number literal
-type NumberLiteralNode struct {
-	Value float64
-}
-
-func (n *NumberLiteralNode) Type() NodeType { return NumberLiteralNodeType }
-
-func (n *NumberLiteralNode) String() string { return pretty(n, 0) }
-
-// string literal
-type StringLiteralNode struct {
-	Value string
-}
-
-func (s *StringLiteralNode) Type() NodeType { return StringLiteralNodeType }
-
-func (s *StringLiteralNode) String() string { return pretty(s, 0) }
-
-// identifier
-type IdentifierNode struct {
-	Name string
-}
-
+type IdentifierNode struct{ Name string }
 func (i *IdentifierNode) Type() NodeType { return IdentifierNodeType }
-
 func (i *IdentifierNode) String() string { return pretty(i, 0) }
+
+type LiteralNode[T int | float64 | string] struct { Value T }
+func (l *LiteralNode[T]) Type() NodeType {
+	switch any(l.Value).(type) {
+	case int:
+		return IntLiteralNodeType
+	case float64:
+		return FloatLiteralNodeType
+	case string:
+		return StringLiteralNodeType
+	default:
+		panic("unknown literal type")
+	}
+}
+func (l *LiteralNode[T]) String() string { return pretty(l, 0) }

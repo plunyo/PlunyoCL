@@ -19,14 +19,17 @@ const (
 	PercentToken
 	EqualToken
 	DoubleEqualToken
-	NotToken
 	NotEqualToken
 	LessThanToken
 	LessEqualToken
 	GreaterThanToken
 	GreaterEqualToken
-	OrToken
-	AndToken
+	LogicalOrToken
+	LogicalAndToken
+	LogicalNotToken
+	BitwiseOrToken
+	BitwiseAndToken
+	BitwiseNotToken
 
 	// punctuation
 	LParenToken
@@ -75,14 +78,17 @@ func (token TokenType) String() string {
 		"PercentToken",
 		"EqualToken",
 		"DoubleEqualToken",
-		"NotToken",
 		"NotEqualToken",
 		"LessThanToken",
 		"LessEqualToken",
 		"GreaterThanToken",
 		"GreaterEqualToken",
-		"OrToken",
-		"AndToken",
+		"LogicalOrToken",
+		"LogicalAndToken",
+		"LogicalNotToken",
+		"BitwiseOrToken",
+		"BitwiseAndToken",
+		"BitwiseNotToken",
 
 		// punctuation
 		"LParenToken",

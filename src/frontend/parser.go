@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"strconv"
+	"strings"
 )
 
 type Parser struct {
@@ -57,28 +58,84 @@ func (parser *Parser) parseStatement() ASTNode {
 
 	switch tok.Type { 
 		case VarToken: return parser.parseVarDecl()
+		case IdentifierToken: return parser.parseAssignment()
 	}
 
-	panic("unknown statement starting at token: " + tok.Value)
+	panic("unknown statement starting at token: " + tok.String())
+}
+
+func (parser *Parser) parseAssignment() ASTNode {
+	nameToken := parser.expect(IdentifierToken, "expected identifier at start of assignment")
+	parser.expect(EqualToken, "expected '=' after identifier")
+
+	value := parser.parseExpression()
+	parser.expect(SemicolonToken, "expected ';' after expression")
+
+	return &AssignmentNode{
+		Name:  nameToken.Value,
+		Value: value,
+	}
 }
 
 func (parser *Parser) parseVarDecl() ASTNode {
 	parser.eat()
 
 	name := parser.expect(IdentifierToken, "expected identifier after 'var'")
-	parser.expect(EqualToken, "expected '=' after identifier")
 
-	value := parser.parseExpression()
-	parser.expect(SemicolonToken, "expected ';' after expression")
+	currentToken := parser.peek()
+	switch currentToken.Type {
+		case EqualToken:
+			parser.eat() // eat =
 
-	return &VarDeclNode{
-		Name:    name.Value,
-		Value:   &value,
+			value := parser.parseExpression()
+			parser.expect(SemicolonToken, "expected ';' after expression")
+
+			return &VarDeclNode{
+				Name:    name.Value,
+				Value:   value,
+			}
+		case SemicolonToken :
+			parser.expect(SemicolonToken, "expected ';' after variable declaration")
+			return &VarDeclNode{
+				Name:	name.Value,
+				Value:  nil,
+			}
 	}
+
+	panic("unexpected token: " + currentToken.String())
 }
 
 func (parser *Parser) parseExpression() ASTNode {
-	return parser.parseAdditive()
+	return parser.parseComparison()
+}
+
+func (parser *Parser) parseComparison() ASTNode {
+	left := parser.parseAdditive()
+
+	for {
+		token := parser.peek()
+		if token == nil {
+			break
+		}
+
+		if token.Type == LessThanToken || token.Type == GreaterThanToken ||
+			token.Type == DoubleEqualToken || token.Type == NotEqualToken ||
+			token.Type == LessEqualToken || token.Type == GreaterEqualToken {
+
+			parser.eat()
+			right := parser.parseExpression()
+
+			left = &BinaryOpNode{
+				Left:     left,
+				Operator: token.Value,
+				Right:    right,
+			}
+		} else {
+			break
+		}
+	}
+
+	return left
 }
 
 func (parser *Parser) parseAdditive() ASTNode {
@@ -95,33 +152,9 @@ func (parser *Parser) parseAdditive() ASTNode {
 			right := parser.parseMultiplicative()
 
 			left = &BinaryOpNode{
-				Left:     &left,
-				Operator: *token,
-				Right:    &right,
-			}
-		}
-	}
-
-	return left
-}
-
-func (parser *Parser) parseMultiplicative() ASTNode {
-	left := parser.parseLiteral()
-	
-	for {
-		token := parser.peek()
-		if token == nil {
-			break
-		}
-
-		if token.Type == StarToken || token.Type == SlashToken {
-			parser.eat()
-			right := parser.parseLiteral()
-
-			left = &BinaryOpNode{
-				Left:     &left,
-				Operator: *token,
-				Right:    &right,
+				Left:     left,
+				Operator: token.Value,
+				Right:    right,
 			}
 		} else {
 			break
@@ -131,7 +164,52 @@ func (parser *Parser) parseMultiplicative() ASTNode {
 	return left
 }
 
-func (parser *Parser) parseLiteral() ASTNode {
+func (parser *Parser) parseMultiplicative() ASTNode {
+	left := parser.parseUnary()
+	
+	for {
+		token := parser.peek()
+		if token == nil {
+			break
+		}
+
+		if token.Type == StarToken || token.Type == SlashToken || token.Type == PercentToken {
+			parser.eat()
+			right := parser.parseUnary()
+
+			left = &BinaryOpNode{
+				Left:     left,
+				Operator: token.Value,
+				Right:    right,
+			}
+		} else {
+			break
+		}
+	}
+
+	return left
+}
+
+func (parser *Parser) parseUnary() ASTNode {
+	token := parser.peek()
+	if token == nil {
+		panic("unexpected end of input in unary")
+	}
+
+	if token.Type == PlusToken || token.Type == MinusToken {
+		parser.eat()
+		operand := parser.parseUnary()
+
+		return &UnaryOpNode{
+			Operator: token.Value,
+			Operand:  operand,
+		}
+	}
+
+	return parser.parsePrimary()
+}
+
+func (parser *Parser) parsePrimary() ASTNode {
 	token := parser.peek()
 	if token == nil {
 		panic("unexpected end of input in term")
@@ -140,17 +218,35 @@ func (parser *Parser) parseLiteral() ASTNode {
 	switch token.Type {
 		case NumberToken:
 			parser.eat()
-			val, err := strconv.ParseFloat(token.Value, 64)
+			val := token.Value
 
-			if err != nil {
-				panic("invalid number format")
+			if strings.Contains(val, ".") || strings.ContainsAny(val, "eE") {
+				num, err := strconv.ParseFloat(val, 64)
+				if err != nil {
+					panic("invalid float literal: " + val)
+				}
+
+				return &LiteralNode[float64]{Value: num}
+			} else {
+				num, err := strconv.Atoi(val)
+				if err != nil {
+					panic("invalid int literal: " + val)
+				}
+
+				return &LiteralNode[int]{Value: num}
 			}
-
-			return &NumberLiteralNode{Value: val}
 
 		case StringToken:
 			parser.eat()
-			return &StringLiteralNode{Value: token.Value}
+			return &LiteralNode[string]{Value: token.Value}
+		case LParenToken:
+			parser.eat()
+			expr := parser.parseExpression()
+			parser.expect(RParenToken, "expected ')' after expression")
+			return expr
+		case IdentifierToken:
+			parser.eat()
+			return &IdentifierNode{Name: token.Value}
 
 	}
 
