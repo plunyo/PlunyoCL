@@ -1,5 +1,5 @@
 // token.go
-package frontend
+package lexer
 
 import "fmt"
 

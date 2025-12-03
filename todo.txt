@@ -1,0 +1,7 @@
+TODOOOOO:
+- print function
+- user defined fuctions
+- control statements (if while for)
+- imports
+- standard libs???
+- threading??

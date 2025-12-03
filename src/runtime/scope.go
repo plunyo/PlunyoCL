@@ -1,14 +1,14 @@
 package runtime
 
 type Scope struct {
+	Parent    *Scope
 	variables map[string]RuntimeValue
-	parent    *Scope
 }
 
 func NewScope(parent *Scope) *Scope {
 	return &Scope{
 		variables: make(map[string]RuntimeValue),
-		parent:    parent,
+		Parent:    parent,
 	}
 }
 
@@ -17,8 +17,8 @@ func (scope *Scope) GetVariable(name string) RuntimeValue {
 		return val
 	}
 
-	if scope.parent != nil {
-		return scope.parent.GetVariable(name)
+	if scope.Parent != nil {
+		return scope.Parent.GetVariable(name)
 	}
 
 	panic("variable not found: " + name)
@@ -34,8 +34,8 @@ func (scope *Scope) HasVariable(name string) bool {
 		return true
 	}
 
-	if scope.parent != nil {
-		return scope.parent.HasVariable(name)
+	if scope.Parent != nil {
+		return scope.Parent.HasVariable(name)
 	}
 
 	return false

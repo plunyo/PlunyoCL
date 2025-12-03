@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"pcl/src/frontend"
-	"pcl/src/runtime"
+	"pcl/src/frontend/lexer"
+	"pcl/src/frontend/parser"
+	"pcl/src/runtime/interpreter"
 )
 
 func processSource(source string) {
-	lexer := frontend.NewLexer(source)
+	lexer := lexer.NewLexer(source)
 	tokens := lexer.Tokenize()
 
     /*
@@ -20,12 +21,12 @@ func processSource(source string) {
 	fmt.Println()
     */
 
-	parser := frontend.NewParser(tokens)
+	parser := parser.NewParser(tokens)
 	ast := parser.GenerateAST()
 
 	// fmt.Println(ast)
 
-    interpreter := runtime.NewInterpreter()
+    interpreter := interpreter.NewInterpreter()
     result := interpreter.Evaluate(ast)
 
     fmt.Println(result)
