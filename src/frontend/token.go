@@ -1,3 +1,4 @@
+// token.go
 package frontend
 
 import "fmt"
@@ -40,7 +41,6 @@ const (
 
 	// keywords
 	VarToken
-	ConstToken
 	IfToken
 	ElseToken
 	ForToken
@@ -97,7 +97,6 @@ func (token TokenType) String() string {
 
 		// keywords
 		"VarToken",
-		"ConstToken",
 		"IfToken",
 		"ElseToken",
 		"ForToken",

@@ -1,3 +1,4 @@
+// lexer.go
 package frontend
 
 import (
@@ -62,7 +63,6 @@ func (lexer *Lexer) Tokenize() []Token {
 	for lexer.currentChar != 0 {
 		switch lexer.currentChar {
 
-		// one char stuff
 		case '+':
 			add(PlusToken, string(lexer.Eat()))
 			continue
@@ -103,7 +103,6 @@ func (lexer *Lexer) Tokenize() []Token {
 			add(DotToken, string(lexer.Eat()))
 			continue
 
-		// slash could be division or line comment //
 		case '/':
 			if lexer.Peek() == '/' {
 				lexer.Eat()
@@ -116,7 +115,6 @@ func (lexer *Lexer) Tokenize() []Token {
 			add(SlashToken, string(lexer.Eat()))
 			continue
 
-		// comparisons and multi-char operators
 		case '=':
 			lexer.Advance()
 			if lexer.currentChar == '=' {
@@ -154,12 +152,10 @@ func (lexer *Lexer) Tokenize() []Token {
 			}
 			continue
 
-		// whitespace -> skip
 		case ' ', '\t', '\n', '\r':
 			lexer.Advance()
 			continue
 
-		// string literal
 		case '"':
 			lexer.Eat()
 			var b strings.Builder
@@ -192,7 +188,6 @@ func (lexer *Lexer) Tokenize() []Token {
 			continue
 
 		default:
-			// numbers
 			if isDigit(lexer.currentChar) {
 				var b strings.Builder
 				for isDigit(lexer.currentChar) {
@@ -211,7 +206,6 @@ func (lexer *Lexer) Tokenize() []Token {
 				continue
 			}
 
-			// identifiers & keywords
 			if isLetter(lexer.currentChar) {
 				var b strings.Builder
 				for isLetter(lexer.currentChar) || isDigit(lexer.currentChar) {
@@ -222,8 +216,6 @@ func (lexer *Lexer) Tokenize() []Token {
 				switch idStr {
 				case "var":
 					add(VarToken, idStr)
-				case "const":
-					add(ConstToken, idStr)
 				case "if":
 					add(IfToken, idStr)
 				case "else":
