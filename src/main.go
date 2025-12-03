@@ -12,16 +12,18 @@ func processSource(source string) {
 	lexer := frontend.NewLexer(source)
 	tokens := lexer.Tokenize()
 
+    /*
 	for _, token := range tokens {
 		fmt.Println(token.String())
 	}
 
 	fmt.Println()
+    */
 
 	parser := frontend.NewParser(tokens)
 	ast := parser.GenerateAST()
 
-	fmt.Println(ast)
+	// fmt.Println(ast)
 
     interpreter := runtime.NewInterpreter()
     result := interpreter.Evaluate(ast)

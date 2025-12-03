@@ -3,6 +3,7 @@ package runtime
 import (
 	"math"
 	"pcl/src/frontend"
+	"strconv"
 )
 
 type Interpreter struct {
@@ -13,14 +14,14 @@ type Interpreter struct {
 func NewInterpreter() *Interpreter {
 	globalScope := NewScope(nil)
 
+	// init globalScope
+	globalScope.SetVariable("nil",   &NilValue{})
+	globalScope.SetVariable("false", &BooleanValue{Value: false})
+	globalScope.SetVariable("true",  &BooleanValue{Value: true})
+
 	return &Interpreter{
-		globalScope: globalScope,
 		currentScope: globalScope,
 	}
-}
-
-func (interpreter *Interpreter) GlobalScope() *Scope {
-	return interpreter.globalScope
 }
 
 func (interpreter *Interpreter) CurrentScope() *Scope {
@@ -96,6 +97,7 @@ func runtimeEqual(a, b RuntimeValue) bool {
 func (interpreter *Interpreter) Evaluate(node frontend.ASTNode) RuntimeValue {
 	switch node := node.(type) {
 		case *frontend.ProgramNode:          return interpreter.evalProgram(node)
+		case *frontend.BlockNode:  		     return interpreter.evalBlock(node)
 		case *frontend.BinaryOpNode:         return interpreter.evalBinOp(node)
 		case *frontend.VarDeclNode:          return interpreter.evalVarDecl(node)
 		case *frontend.AssignmentNode:       return interpreter.evalAssignment(node)
@@ -104,7 +106,7 @@ func (interpreter *Interpreter) Evaluate(node frontend.ASTNode) RuntimeValue {
 		case *frontend.LiteralNode[float64]: return &FloatValue{Value: node.Value}
 		case *frontend.LiteralNode[int]:     return &IntValue{Value: node.Value}
 		case *frontend.LiteralNode[string]:  return &StringValue{Value: node.Value}
-		default: panic("unsupported AST node type")
+		default: panic("unsupported AST node type: " + strconv.Itoa(int(node.Type())))
 	}
 }
 
@@ -115,6 +117,18 @@ func (interpreter *Interpreter) evalProgram(programNode *frontend.ProgramNode) R
 		lastVal = interpreter.Evaluate(statement)
 	}
 
+	return lastVal
+}
+
+func (interpreter *Interpreter) evalBlock(blockNode *frontend.BlockNode) RuntimeValue {
+	var lastVal RuntimeValue = &NilValue{}
+	interpreter.EnterScope()
+
+	for _, statement := range blockNode.Statements {
+		lastVal = interpreter.Evaluate(statement)
+	}
+
+	interpreter.ExitScope()
 	return lastVal
 }
 
@@ -228,24 +242,24 @@ func (interpreter *Interpreter) evalArithmetic(left, right RuntimeValue, op stri
 	var res float64
 
 	switch op {
-	case "+":
-		// fancy string adding
-		if ls, lok := left.(*StringValue); lok {
-			if rs, rok := right.(*StringValue); rok {
-				return &StringValue{Value: ls.Value + rs.Value}
+		case "+":
+			// fancy string adding
+			if ls, lok := left.(*StringValue); lok {
+				if rs, rok := right.(*StringValue); rok {
+					return &StringValue{Value: ls.Value + rs.Value}
+				}
 			}
-		}
-		res = lf + rf
-	case "-":
-		res = lf - rf
-	case "*":
-		res = lf * rf
-	case "/":
-		res = lf / rf
-	case "%":
-		res = math.Mod(lf, rf)
-	default:
-		panic("unsupported arithmetic op: " + op)
+			res = lf + rf
+		case "-":
+			res = lf - rf
+		case "*":
+			res = lf * rf
+		case "/":
+			res = lf / rf
+		case "%":
+			res = math.Mod(lf, rf)
+		default:
+			panic("unsupported arithmetic op: " + op)
 	}
 
 	if lIsInt && rIsInt && res == math.Trunc(res) {
@@ -347,6 +361,7 @@ func (interpreter *Interpreter) evalUnary(unaryNode *frontend.UnaryOpNode) Runti
 
 func (interpreter *Interpreter) evalIdentifier(identifierNode *frontend.IdentifierNode) RuntimeValue {
 	name := identifierNode.Name
+
 	if interpreter.currentScope.HasVariable(name) {
 		return interpreter.currentScope.GetVariable(name)
 	}

@@ -12,7 +12,7 @@ func NewScope(parent *Scope) *Scope {
 	}
 }
 
-func (scope *Scope) GetVariable(name string) (RuntimeValue) {
+func (scope *Scope) GetVariable(name string) RuntimeValue {
 	if val, ok := scope.variables[name]; ok {
 		return val
 	}

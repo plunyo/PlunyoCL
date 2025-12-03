@@ -39,13 +39,13 @@ func (parser *Parser) expect(tType TokenType, msg string) *Token {
 }
 
 func (parser *Parser) GenerateAST() ASTNode {
-	root := &ProgramNode{Statements: []ASTNode{}}
+	program := &ProgramNode{Statements: []ASTNode{}}
 
 	for t := parser.peek(); t != nil && t.Type != EOFToken; t = parser.peek() {
-		root.Statements = append(root.Statements, parser.parseStatement())
+		program.Statements = append(program.Statements, parser.parseStatement())
 	}
 
-	return root
+	return program
 }
 
 func (parser *Parser) parseStatement() ASTNode {
@@ -57,11 +57,24 @@ func (parser *Parser) parseStatement() ASTNode {
 
 
 	switch tok.Type { 
-		case VarToken: return parser.parseVarDecl()
+		case VarToken:        return parser.parseVarDecl()
 		case IdentifierToken: return parser.parseAssignment()
+		case LBraceToken:     return parser.parseBlock()
 	}
 
 	panic("unknown statement starting at token: " + tok.String())
+}
+
+func (parser *Parser) parseBlock() ASTNode {
+	parser.eat() // eat {
+	block := &BlockNode{Statements: []ASTNode{}}
+
+	for t := parser.peek(); t != nil && t.Type != RBraceToken; t = parser.peek() {
+		block.Statements = append(block.Statements, parser.parseStatement())
+	}
+
+	parser.eat() // eat }
+	return block
 }
 
 func (parser *Parser) parseAssignment() ASTNode {
@@ -120,7 +133,9 @@ func (parser *Parser) parseComparison() ASTNode {
 
 		if token.Type == LessThanToken || token.Type == GreaterThanToken ||
 			token.Type == DoubleEqualToken || token.Type == NotEqualToken ||
-			token.Type == LessEqualToken || token.Type == GreaterEqualToken {
+			token.Type == LessEqualToken || token.Type == GreaterEqualToken ||
+			token.Type == LogicalAndToken || token.Type == LogicalOrToken ||
+			token.Type == LogicalNotToken {
 
 			parser.eat()
 			right := parser.parseExpression()
