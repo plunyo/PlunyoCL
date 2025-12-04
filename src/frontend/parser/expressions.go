@@ -7,15 +7,15 @@ import (
 	"strings"
 )
 
-func (p *Parser) parseExpression() ast.ASTNode {
-	return p.parseComparison()
+func (parser *Parser) parseExpression() ast.ASTNode {
+	return parser.parseComparison()
 }
 
-func (p *Parser) parseComparison() ast.ASTNode {
-	left := p.parseAdditive()
+func (parser *Parser) parseComparison() ast.ASTNode {
+	left := parser.parseAdditive()
 
 	for {
-		token := p.peek()
+		token := parser.peek()
 		if token == nil {
 			break
 		}
@@ -26,8 +26,8 @@ func (p *Parser) parseComparison() ast.ASTNode {
 			token.Type == lexer.LogicalAndToken || token.Type == lexer.LogicalOrToken ||
 			token.Type == lexer.LogicalNotToken {
 
-			p.eat()
-			right := p.parseExpression()
+			parser.eat()
+			right := parser.parseExpression()
 
 			left = &ast.BinaryOpNode{
 				Left:     left,
@@ -42,18 +42,18 @@ func (p *Parser) parseComparison() ast.ASTNode {
 	return left
 }
 
-func (p *Parser) parseAdditive() ast.ASTNode {
-	left := p.parseMultiplicative()
+func (parser *Parser) parseAdditive() ast.ASTNode {
+	left := parser.parseMultiplicative()
 
 	for {
-		token := p.peek()
+		token := parser.peek()
 		if token == nil {
 			break
 		}
 
 		if token.Type == lexer.PlusToken || token.Type == lexer.MinusToken {
-			p.eat()
-			right := p.parseMultiplicative()
+			parser.eat()
+			right := parser.parseMultiplicative()
 			left = &ast.BinaryOpNode{Left: left, Operator: token.Value, Right: right}
 		} else {
 			break
@@ -63,18 +63,18 @@ func (p *Parser) parseAdditive() ast.ASTNode {
 	return left
 }
 
-func (p *Parser) parseMultiplicative() ast.ASTNode {
-	left := p.parseUnary()
+func (parser *Parser) parseMultiplicative() ast.ASTNode {
+	left := parser.parseUnary()
 
 	for {
-		token := p.peek()
+		token := parser.peek()
 		if token == nil {
 			break
 		}
 
 		if token.Type == lexer.StarToken || token.Type == lexer.SlashToken || token.Type == lexer.PercentToken {
-			p.eat()
-			right := p.parseUnary()
+			parser.eat()
+			right := parser.parseUnary()
 			left = &ast.BinaryOpNode{Left: left, Operator: token.Value, Right: right}
 		} else {
 			break
@@ -84,29 +84,29 @@ func (p *Parser) parseMultiplicative() ast.ASTNode {
 	return left
 }
 
-func (p *Parser) parseUnary() ast.ASTNode {
-	token := p.peek()
+func (parser *Parser) parseUnary() ast.ASTNode {
+	token := parser.peek()
 	if token == nil {
 		panic("unexpected end of input in unary")
 	}
 
 	if token.Type == lexer.PlusToken || token.Type == lexer.MinusToken {
-		p.eat()
-		return &ast.UnaryOpNode{Operator: token.Value, Operand: p.parseUnary()}
+		parser.eat()
+		return &ast.UnaryOpNode{Operator: token.Value, Operand: parser.parseUnary()}
 	}
 
-	return p.parsePrimary()
+	return parser.parsePrimary()
 }
 
-func (p *Parser) parsePrimary() ast.ASTNode {
-	token := p.peek()
+func (parser *Parser) parsePrimary() ast.ASTNode {
+	token := parser.peek()
 	if token == nil {
 		panic("unexpected end of input in term")
 	}
 
 	switch token.Type {
 	case lexer.NumberToken:
-		p.eat()
+		parser.eat()
 		val := token.Value
 		if strings.Contains(val, ".") || strings.ContainsAny(val, "eE") {
 			num, err := strconv.ParseFloat(val, 64)
@@ -123,19 +123,56 @@ func (p *Parser) parsePrimary() ast.ASTNode {
 		}
 
 	case lexer.StringToken:
-		p.eat()
+		parser.eat()
 		return &ast.LiteralNode[string]{Value: token.Value}
 
 	case lexer.LParenToken:
-		p.eat()
-		expr := p.parseExpression()
-		p.expect(lexer.RParenToken, "expected ')' after expression")
+		parser.eat()
+		expr := parser.parseExpression()
+		parser.expect(lexer.RParenToken, "expected ')' after expression")
 		return expr
 
 	case lexer.IdentifierToken:
-		p.eat()
-		return &ast.IdentifierNode{Name: token.Value}
+		return parser.parseFunctionCall()
+
+	default:
+		panic("unknown term: " + token.Value)
+	}
+}
+
+// ---------- Identifier ----------
+
+func (parser *Parser) parseIdentifier() *ast.IdentifierNode {
+	identToken := parser.eat() // eat identifier
+	return &ast.IdentifierNode{Name: identToken.Value}
+}
+
+// ---------- Function Call ----------
+
+func (parser *Parser) parseFunctionCall() ast.ASTNode {
+	identifier := parser.parseIdentifier()
+
+	if parser.peek() != nil && parser.peek().Type == lexer.LParenToken {
+		parser.eat() // eat '('
+		
+		functionCallNode := &ast.FunctionCallNode{
+			Callee:    identifier,
+			Arguments: []ast.ASTNode{},
+		}
+
+		for parser.peek() != nil && parser.peek().Type != lexer.RParenToken {
+			arg := parser.parseExpression()
+			functionCallNode.Arguments = append(functionCallNode.Arguments, arg)
+
+			if parser.peek() != nil && parser.peek().Type == lexer.CommaToken {
+				parser.eat() // eat ','
+			}
+		}
+
+		parser.expect(lexer.RParenToken, "expected ')' after arguments")
+
+		return functionCallNode
 	}
 
-	panic("unknown term: " + token.Value)
+	return identifier
 }

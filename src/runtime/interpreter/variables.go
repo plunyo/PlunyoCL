@@ -19,6 +19,7 @@ func (interpreter *Interpreter) evalAssignment(node *ast.AssignmentNode) runtime
 	if interpreter.currentScope.HasVariable(node.Name) {
 		return interpreter.currentScope.SetVariable(node.Name, interpreter.Evaluate(node.Value))
 	}
+
 	panic("variable not found: " + node.Name)
 }
 
@@ -26,5 +27,6 @@ func (interpreter *Interpreter) evalIdentifier(node *ast.IdentifierNode) runtime
 	if interpreter.currentScope.HasVariable(node.Name) {
 		return interpreter.currentScope.GetVariable(node.Name)
 	}
+	
 	panic("variable not found: " + node.Name)
 }

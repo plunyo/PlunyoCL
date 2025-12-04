@@ -24,13 +24,24 @@ func (p *Parser) parseStatement() ast.ASTNode {
 	switch tok.Type {
 	case lexer.VarToken:
 		return p.parseVarDecl()
-	case lexer.IdentifierToken:
-		return p.parseAssignment()
+	case lexer.FuncToken:
+		return p.parseFuncDecl()
 	case lexer.LBraceToken:
 		return p.parseBlock()
+	case lexer.IdentifierToken:
+		// Look ahead to see if it's an assignment or an expression statement
+		if p.peekAhead(1) != nil && p.peekAhead(1).Type == lexer.EqualToken {
+			return p.parseAssignment()
+		}
+		// Otherwise it's an expression statement
+		expr := p.parseExpression()
+		if p.peek() != nil && p.peek().Type == lexer.SemicolonToken {
+			p.eat() // eat ';'
+		}
+		return expr
+	default:
+		panic("unknown statement starting at token: " + tok.String())
 	}
-
-	panic("unknown statement starting at token: " + tok.String())
 }
 
 func (p *Parser) parseBlock() ast.ASTNode {

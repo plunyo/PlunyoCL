@@ -37,3 +37,37 @@ func (p *Parser) parseVarDecl() ast.ASTNode {
 
 	panic("unexpected token: " + currentToken.String())
 }
+
+func (p *Parser) parseFuncDecl() ast.ASTNode {
+	p.eat() // eat 'func'
+	name := p.expect(lexer.IdentifierToken, "expected function name after 'func'")
+	p.expect(lexer.LParenToken, "expected '(' after function name")
+
+	// Parse parameters
+	var params []string
+	for t := p.peek(); t != nil && t.Type != lexer.RParenToken; t = p.peek() {
+		paramName := p.expect(lexer.IdentifierToken, "expected parameter name")
+		params = append(params, paramName.Value)
+
+		if p.peek().Type == lexer.CommaToken {
+			p.eat() // eat ','
+		}
+	}
+
+	p.expect(lexer.RParenToken, "expected ')' after parameters")
+	p.expect(lexer.LBraceToken, "expected '{' before function body")
+
+	// Parse body as statements
+	var statements []ast.ASTNode
+	for t := p.peek(); t != nil && t.Type != lexer.RBraceToken; t = p.peek() {
+		statements = append(statements, p.parseStatement())
+	}
+
+	p.expect(lexer.RBraceToken, "expected '}' after function body")
+
+	return &ast.FunctionDeclNode{
+		Name:       name.Value,
+		Arguments:  params,
+		Statements: statements,
+	}
+}

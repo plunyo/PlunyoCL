@@ -14,6 +14,8 @@ const (
 	BlockNodeType
 	VarDeclNodeType
 	AssignmentNodeType
+	FunctionDeclNodeType
+	FunctionCallNodeType
 	BinaryOpNodeType
 	UnaryOpNodeType
 	IntLiteralNodeType
@@ -28,8 +30,6 @@ type ASTNode interface {
 	String() string
 }
 
-// ---------- Pretty printing helpers ----------
-
 func indentStr(level int) string {
 	return strings.Repeat("  ", level)
 }
@@ -40,63 +40,97 @@ func pretty(node ASTNode, level int) string {
 	}
 
 	switch n := node.(type) {
-		case *ProgramNode:
-			sb := &strings.Builder{}
-			sb.WriteString(indentStr(level) + "ProgramNode {\n")
-			for _, stmt := range n.Statements {
-				sb.WriteString(pretty(stmt, level+1) + ",\n")
+	case *ProgramNode:
+		sb := &strings.Builder{}
+		sb.WriteString(indentStr(level) + "ProgramNode {\n")
+		for _, stmt := range n.Statements {
+			sb.WriteString(pretty(stmt, level+1) + ",\n")
+		}
+		sb.WriteString(indentStr(level) + "}")
+		return sb.String()
+
+	case *BlockNode:
+		sb := &strings.Builder{}
+		sb.WriteString(indentStr(level) + "BlockNode {\n")
+		for _, stmt := range n.Statements {
+			sb.WriteString(pretty(stmt, level+1) + ",\n")
+		}
+		sb.WriteString(indentStr(level) + "}")
+		return sb.String()
+
+	case *VarDeclNode:
+		return formatNode("VarDeclNode", level, map[string]ASTNode{
+			"Name":  &IdentifierNode{Name: n.Name},
+			"Value": n.Value,
+		})
+
+	case *AssignmentNode:
+		return formatNode("AssignmentNode", level, map[string]ASTNode{
+			"Name":  &IdentifierNode{Name: n.Name},
+			"Value": n.Value,
+		})
+
+	case *FunctionCallNode:
+		sb := &strings.Builder{}
+		sb.WriteString(indentStr(level) + "FunctionCallNode {\n")
+		sb.WriteString(indentStr(level+1) + "Callee: " + n.Callee.String() + "\n")
+		sb.WriteString(indentStr(level+1) + "Arguments: [")
+		for i, arg := range n.Arguments {
+			if i > 0 {
+				sb.WriteString(", ")
 			}
-			sb.WriteString(indentStr(level) + "}")
-			return sb.String()
+			sb.WriteString(arg.String())
+		}
+		sb.WriteString("]\n")
+		sb.WriteString(indentStr(level) + "}")
+		return sb.String()
 
-		case *BlockNode:
-			sb := &strings.Builder{}
-			sb.WriteString(indentStr(level) + "BlockNode {\n")
-			for _, stmt := range n.Statements {
-				sb.WriteString(pretty(stmt, level+1) + ",\n")
+	case *FunctionDeclNode:
+		sb := &strings.Builder{}
+		sb.WriteString(indentStr(level) + "FunctionDeclNode {\n")
+		sb.WriteString(indentStr(level+1) + "Name: " + fmt.Sprintf("%q", n.Name) + "\n")
+		sb.WriteString(indentStr(level+1) + "Arguments: [")
+		for i, arg := range n.Arguments {
+			if i > 0 {
+				sb.WriteString(", ")
 			}
-			sb.WriteString(indentStr(level) + "}")
-			return sb.String()
+			sb.WriteString(arg)
+		}
+		sb.WriteString("]\n")
+		sb.WriteString(indentStr(level+1) + "Statements:\n")
+		for _, stmt := range n.Statements {
+			sb.WriteString(pretty(stmt, level+2) + ",\n")
+		}
+		sb.WriteString(indentStr(level) + "}")
+		return sb.String()
 
-		case *VarDeclNode:
-			return formatNode("VarDeclNode", level, map[string]ASTNode{
-				"Name":  &IdentifierNode{Name: n.Name},
-				"Value": n.Value,
-			})
+	case *BinaryOpNode:
+		return formatNode("BinaryOpNode", level, map[string]ASTNode{
+			"Operator": &LiteralNode[string]{Value: n.Operator},
+			"Left":     n.Left,
+			"Right":    n.Right,
+		})
 
-		case *AssignmentNode:
-			return formatNode("AssignmentNode", level, map[string]ASTNode{
-				"Name":  &IdentifierNode{Name: n.Name},
-				"Value": n.Value,
-			})
+	case *UnaryOpNode:
+		return formatNode("UnaryOpNode", level, map[string]ASTNode{
+			"Operator": &LiteralNode[string]{Value: n.Operator},
+			"Operand":  n.Operand,
+		})
 
-		case *BinaryOpNode:
-			return formatNode("BinaryOpNode", level, map[string]ASTNode{
-				"Operator": &LiteralNode[string]{Value: n.Operator},
-				"Left":     n.Left,
-				"Right":    n.Right,
-			})
+	case *LiteralNode[int]:
+		return indentStr(level) + fmt.Sprintf("IntLiteralNode { Value: %v }", n.Value)
 
-		case *UnaryOpNode:
-			return formatNode("UnaryOpNode", level, map[string]ASTNode{
-				"Operator": &LiteralNode[string]{Value: n.Operator},
-				"Operand":  n.Operand,
-			})
+	case *LiteralNode[float64]:
+		return indentStr(level) + fmt.Sprintf("FloatLiteralNode { Value: %v }", n.Value)
 
-		case *LiteralNode[int]:
-			return indentStr(level) + fmt.Sprintf("IntLiteralNode { Value: %v }", n.Value)
+	case *LiteralNode[string]:
+		return indentStr(level) + `StringLiteralNode { Value: "` + n.Value + `" }`
 
-		case *LiteralNode[float64]:
-			return indentStr(level) + fmt.Sprintf("FloatLiteralNode { Value: %v }", n.Value)
+	case *IdentifierNode:
+		return indentStr(level) + "IdentifierNode { Name: " + n.Name + " }"
 
-		case *LiteralNode[string]:
-			return indentStr(level) + `StringLiteralNode { Value: "` + n.Value + `" }`
-
-		case *IdentifierNode:
-			return indentStr(level) + "IdentifierNode { Name: " + n.Name + " }"
-
-		default:
-			return indentStr(level) + node.String()
+	default:
+		return indentStr(level) + node.String()
 	}
 }
 
@@ -134,6 +168,23 @@ type AssignmentNode struct {
 }
 func (a *AssignmentNode) Type() NodeType { return AssignmentNodeType }
 func (a *AssignmentNode) String() string { return pretty(a, 0) }
+
+type FunctionCallNode struct {
+	Callee    *IdentifierNode
+	Arguments []ASTNode
+}
+
+func (f *FunctionCallNode) Type() NodeType { return FunctionCallNodeType }
+func (f *FunctionCallNode) String() string { return pretty(f, 0) }
+
+type FunctionDeclNode struct {
+	Name 	   string
+	Arguments  []string
+	Statements []ASTNode
+}
+
+func (f *FunctionDeclNode) Type() NodeType { return FunctionDeclNodeType }
+func (f *FunctionDeclNode) String() string { return pretty(f, 0) }
 
 type BinaryOpNode struct {
 	Left, Right ASTNode

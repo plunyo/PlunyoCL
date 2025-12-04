@@ -19,6 +19,14 @@ func (p *Parser) peek() *lexer.Token {
 	return &p.tokens[p.pos]
 }
 
+func (p *Parser) peekAhead(n int) *lexer.Token {
+	pos := p.pos + n
+	if pos >= len(p.tokens) {
+		return nil
+	}
+	return &p.tokens[pos]
+}
+
 func (p *Parser) eat() *lexer.Token {
 	if p.pos >= len(p.tokens) {
 		return nil

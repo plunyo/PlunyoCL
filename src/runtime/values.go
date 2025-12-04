@@ -1,6 +1,9 @@
 package runtime
 
-import "fmt"
+import (
+	"fmt"
+	"pcl/src/frontend/ast"
+)
 
 // types
 type ValueType int
@@ -11,6 +14,7 @@ const (
 	StringValueType
 	BooleanValueType
 	NilValueType
+	FunctionValueType
 )
 
 // interface
@@ -65,4 +69,17 @@ type NilValue struct{}
 func (v *NilValue) Type() ValueType { return NilValueType }
 func (v *NilValue) String() string {
 	return "NilValue { Value: nil }"
+}
+
+// function
+type FunctionValue struct {
+	Name       string
+	Parameters []string
+	Body       *ast.BlockNode
+	Closure    *Scope
+}
+
+func (f *FunctionValue) Type() ValueType { return FunctionValueType }
+func (f *FunctionValue) String() string {
+	return fmt.Sprintf("FunctionValue { Name: %s, Parameters: %v }", f.Name, f.Parameters)
 }

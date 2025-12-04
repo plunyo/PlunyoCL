@@ -1,1 +1,5 @@
-var a = true || 12 > 2;
+add = func(a, b) {
+    a + b;
+}
+
+add(5, 3)
