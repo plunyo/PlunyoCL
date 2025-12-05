@@ -27,7 +27,7 @@ func (p *Parser) parseStatement() ast.ASTNode {
 	case lexer.FuncToken:
 		return p.parseFuncDecl()
 	case lexer.LBraceToken:
-		return p.parseBlock()
+		return p.parseBody()
 	case lexer.IdentifierToken:
 		// Look ahead to see if it's an assignment or an expression statement
 		if p.peekAhead(1) != nil && p.peekAhead(1).Type == lexer.EqualToken {
@@ -44,9 +44,9 @@ func (p *Parser) parseStatement() ast.ASTNode {
 	}
 }
 
-func (p *Parser) parseBlock() ast.ASTNode {
+func (p *Parser) parseBody() ast.ASTNode {
 	p.eat() // eat '{'
-	block := &ast.BlockNode{Statements: []ast.ASTNode{}}
+	block := &ast.BodyNode{Statements: []ast.ASTNode{}}
 
 	for t := p.peek(); t != nil && t.Type != lexer.RBraceToken; t = p.peek() {
 		block.Statements = append(block.Statements, p.parseStatement())

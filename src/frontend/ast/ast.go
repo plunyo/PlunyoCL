@@ -11,7 +11,7 @@ type NodeType int
 
 const (
 	ProgramNodeType NodeType = iota
-	BlockNodeType
+	BodyNodeType
 	VarDeclNodeType
 	AssignmentNodeType
 	FunctionCallNodeType
@@ -49,9 +49,9 @@ func pretty(node ASTNode, level int) string {
 		sb.WriteString(indentStr(level) + "}")
 		return sb.String()
 
-	case *BlockNode:
+	case *BodyNode:
 		sb := &strings.Builder{}
-		sb.WriteString(indentStr(level) + "BlockNode {\n")
+		sb.WriteString(indentStr(level) + "BodyNode {\n")
 		for _, stmt := range n.Statements {
 			sb.WriteString(pretty(stmt, level+1) + ",\n")
 		}
@@ -97,7 +97,7 @@ func pretty(node ASTNode, level int) string {
 		}
 		sb.WriteString("]\n")
 		sb.WriteString(indentStr(level+1) + "Statements:\n")
-		for _, stmt := range n.Statements {
+		for _, stmt := range n.Body.Statements {
 			sb.WriteString(pretty(stmt, level+2) + ",\n")
 		}
 		sb.WriteString(indentStr(level) + "}")
@@ -150,9 +150,9 @@ type ProgramNode struct{ Statements []ASTNode }
 func (p *ProgramNode) Type() NodeType { return ProgramNodeType }
 func (p *ProgramNode) String() string { return pretty(p, 0) }
 
-type BlockNode struct { Statements []ASTNode }
-func (b *BlockNode) Type() NodeType { return BlockNodeType }
-func (b *BlockNode) String() string { return pretty(b, 0) }
+type BodyNode struct { Statements []ASTNode }
+func (b *BodyNode) Type() NodeType { return BodyNodeType }
+func (b *BodyNode) String() string { return pretty(b, 0) }
 
 type VarDeclNode struct {
 	Name  string
@@ -178,7 +178,7 @@ func (f *FunctionCallNode) String() string { return pretty(f, 0) }
 
 type FunctionLiteralNode struct {
 	Arguments  []string
-	Statements []ASTNode
+	Body       *BodyNode
 }
 
 func (f *FunctionLiteralNode) Type() NodeType { return FunctionLiteralNodeType }
@@ -205,14 +205,14 @@ func (i *IdentifierNode) String() string { return pretty(i, 0) }
 type LiteralNode[T int | float64 | string] struct { Value T }
 func (l *LiteralNode[T]) Type() NodeType {
 	switch any(l.Value).(type) {
-	case int:
-		return IntLiteralNodeType
-	case float64:
-		return FloatLiteralNodeType
-	case string:
-		return StringLiteralNodeType
-	default:
-		panic("unknown literal type")
+		case int:
+			return IntLiteralNodeType
+		case float64:
+			return FloatLiteralNodeType
+		case string:
+			return StringLiteralNodeType
+		default:
+			panic("unknown literal type")
 	}
 }
 func (l *LiteralNode[T]) String() string { return pretty(l, 0) }

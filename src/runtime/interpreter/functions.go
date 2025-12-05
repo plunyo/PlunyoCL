@@ -19,19 +19,19 @@ func (interpreter *Interpreter) evalFuncCall(node *ast.FunctionCallNode) runtime
 		args[i] = interpreter.Evaluate(arg)
 	}
 
-	if len(args) != len(function.Parameters) {
-		panic("function expects " + string(rune(len(function.Parameters))) + " arguments, got " + string(rune(len(args))))
+	if len(args) != len(function.Arguments) {
+		panic("function expects " + string(rune(len(function.Arguments))) + " arguments, got " + string(rune(len(args))))
 	}
 
 	prevScope := interpreter.currentScope
-	interpreter.currentScope = runtime.NewScope(function.Closure)
+	interpreter.currentScope = runtime.NewScope(prevScope)
 
 	// geniusely make the params into variables
-	for i, param := range function.Parameters {
+	for i, param := range function.Arguments {
 		interpreter.currentScope.SetVariable(param, args[i])
 	}
 
-	result := interpreter.evalBlock(function.Body)
+	result := interpreter.evalBody(function.Body)
 
 	interpreter.currentScope = prevScope
 

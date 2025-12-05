@@ -208,6 +208,6 @@ func (parser *Parser) parseFunctionLiteral() ast.ASTNode {
 
 	return &ast.FunctionLiteralNode{
 		Arguments: params,
-		Statements: body,
+		Body:      &ast.BodyNode{Statements: body},
 	}
 }

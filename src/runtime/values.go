@@ -73,13 +73,11 @@ func (v *NilValue) String() string {
 
 // function
 type FunctionValue struct {
-	Name       string
-	Parameters []string
-	Body       *ast.BlockNode
-	Closure    *Scope
+	Arguments []string
+	Body       *ast.BodyNode
 }
 
 func (f *FunctionValue) Type() ValueType { return FunctionValueType }
 func (f *FunctionValue) String() string {
-	return fmt.Sprintf("FunctionValue { Name: %s, Parameters: %v }", f.Name, f.Parameters)
+	return fmt.Sprintf("FunctionValue { Arguments: %v }", f.Arguments)
 }

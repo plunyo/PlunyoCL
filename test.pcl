@@ -2,4 +2,4 @@ add = func(a, b) {
     a + b;
 };
 
-add(5, 3)
+add(5, 3);
