@@ -29,15 +29,15 @@ func (p *Parser) parseStatement() ast.ASTNode {
 	case lexer.LBraceToken:
 		return p.parseBody()
 	case lexer.IdentifierToken:
-		// Look ahead to see if it's an assignment or an expression statement
 		if p.peekAhead(1) != nil && p.peekAhead(1).Type == lexer.EqualToken {
 			return p.parseAssignment()
 		}
-		// Otherwise it's an expression statement
+
 		expr := p.parseExpression()
 		if p.peek() != nil && p.peek().Type == lexer.SemicolonToken {
 			p.eat() // eat ';'
 		}
+		
 		return expr
 	default:
 		panic("unknown statement starting at token: " + tok.String())

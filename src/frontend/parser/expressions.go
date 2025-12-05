@@ -23,8 +23,7 @@ func (parser *Parser) parseComparison() ast.ASTNode {
 		if token.Type == lexer.LessThanToken || token.Type == lexer.GreaterThanToken ||
 			token.Type == lexer.DoubleEqualToken || token.Type == lexer.NotEqualToken ||
 			token.Type == lexer.LessEqualToken || token.Type == lexer.GreaterEqualToken ||
-			token.Type == lexer.LogicalAndToken || token.Type == lexer.LogicalOrToken ||
-			token.Type == lexer.LogicalNotToken {
+			token.Type == lexer.LogicalAndToken || token.Type == lexer.LogicalOrToken {
 
 			parser.eat()
 			right := parser.parseExpression()
@@ -194,12 +193,14 @@ func (parser *Parser) parseFunctionLiteral() ast.ASTNode {
 		if parser.peek().Type == lexer.CommaToken {
 			parser.eat()
 		}
+
 	}
 
 	parser.expect(lexer.RParenToken, "expected ')' after parameters")
 	parser.expect(lexer.LBraceToken, "expected '{' before function body")
 
 	var body []ast.ASTNode
+
 	for t := parser.peek(); t != nil && t.Type != lexer.RBraceToken; t = parser.peek() {
 		body = append(body, parser.parseStatement())
 	}

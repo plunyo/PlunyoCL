@@ -15,6 +15,7 @@ const (
 	VarDeclNodeType
 	AssignmentNodeType
 	FunctionCallNodeType
+	ReturnNodeType
 	BinaryOpNodeType
 	UnaryOpNodeType
 	IntLiteralNodeType
@@ -183,6 +184,10 @@ type FunctionLiteralNode struct {
 
 func (f *FunctionLiteralNode) Type() NodeType { return FunctionLiteralNodeType }
 func (f *FunctionLiteralNode) String() string { return pretty(f, 0) }
+
+type ReturnNode struct {
+	Value ASTNode
+}
 
 type BinaryOpNode struct {
 	Left, Right ASTNode
