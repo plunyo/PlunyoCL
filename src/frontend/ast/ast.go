@@ -14,7 +14,6 @@ const (
 	BlockNodeType
 	VarDeclNodeType
 	AssignmentNodeType
-	FunctionDeclNodeType
 	FunctionCallNodeType
 	BinaryOpNodeType
 	UnaryOpNodeType
@@ -22,6 +21,7 @@ const (
 	FloatLiteralNodeType
 	StringLiteralNodeType
 	BooleanLiteralNodeType
+	FunctionLiteralNodeType
 	IdentifierNodeType
 )
 
@@ -85,10 +85,9 @@ func pretty(node ASTNode, level int) string {
 		sb.WriteString(indentStr(level) + "}")
 		return sb.String()
 
-	case *FunctionDeclNode:
+	case *FunctionLiteralNode:
 		sb := &strings.Builder{}
 		sb.WriteString(indentStr(level) + "FunctionDeclNode {\n")
-		sb.WriteString(indentStr(level+1) + "Name: " + fmt.Sprintf("%q", n.Name) + "\n")
 		sb.WriteString(indentStr(level+1) + "Arguments: [")
 		for i, arg := range n.Arguments {
 			if i > 0 {
@@ -177,14 +176,13 @@ type FunctionCallNode struct {
 func (f *FunctionCallNode) Type() NodeType { return FunctionCallNodeType }
 func (f *FunctionCallNode) String() string { return pretty(f, 0) }
 
-type FunctionDeclNode struct {
-	Name 	   string
+type FunctionLiteralNode struct {
 	Arguments  []string
 	Statements []ASTNode
 }
 
-func (f *FunctionDeclNode) Type() NodeType { return FunctionDeclNodeType }
-func (f *FunctionDeclNode) String() string { return pretty(f, 0) }
+func (f *FunctionLiteralNode) Type() NodeType { return FunctionLiteralNodeType }
+func (f *FunctionLiteralNode) String() string { return pretty(f, 0) }
 
 type BinaryOpNode struct {
 	Left, Right ASTNode

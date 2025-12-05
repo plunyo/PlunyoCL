@@ -22,10 +22,10 @@ func (interpreter *Interpreter) Evaluate(node ast.ASTNode) runtime.RuntimeValue 
 		return interpreter.evalUnary(node)
 	case *ast.IdentifierNode:
 		return interpreter.evalIdentifier(node)
-	case *ast.FunctionDeclNode:
-		return interpreter.evalFuncDecl(node)
 	case *ast.FunctionCallNode:
 		return interpreter.evalFuncCall(node)
+	case *ast.FunctionLiteralNode:
+		return interpreter.
 	case *ast.LiteralNode[float64]:
 		return &runtime.FloatValue{Value: node.Value}
 	case *ast.LiteralNode[int]:

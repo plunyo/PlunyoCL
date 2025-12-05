@@ -24,7 +24,7 @@ func processSource(source string) {
 	parser := parser.NewParser(tokens)
 	ast := parser.GenerateAST()
 
-	// fmt.Println(ast)
+	fmt.Println(ast)
 
     interpreter := interpreter.NewInterpreter()
     result := interpreter.Evaluate(ast)

@@ -5,12 +5,12 @@ import (
 	"pcl/src/frontend/lexer"
 )
 
-func (p *Parser) parseAssignment() ast.ASTNode {
-	nameToken := p.expect(lexer.IdentifierToken, "expected identifier at start of assignment")
-	p.expect(lexer.EqualToken, "expected '=' after identifier")
+func (parser *Parser) parseAssignment() ast.ASTNode {
+	nameToken := parser.expect(lexer.IdentifierToken, "expected identifier at start of assignment")
+	parser.expect(lexer.EqualToken, "expected '=' after identifier")
 
-	value := p.parseExpression()
-	p.expect(lexer.SemicolonToken, "expected ';' after expression")
+	value := parser.parseExpression()
+	parser.expect(lexer.SemicolonToken, "expected ';' after expression")
 
 	return &ast.AssignmentNode{
 		Name:  nameToken.Value,
@@ -18,56 +18,37 @@ func (p *Parser) parseAssignment() ast.ASTNode {
 	}
 }
 
-func (p *Parser) parseVarDecl() ast.ASTNode {
-	p.eat() // eat 'var'
-	name := p.expect(lexer.IdentifierToken, "expected identifier after 'var'")
+func (parser *Parser) parseVarDecl() ast.ASTNode {
+	parser.eat() // eat 'var'
+	name := parser.expect(lexer.IdentifierToken, "expected identifier after 'var'")
 
-	currentToken := p.peek()
+	currentToken := parser.peek()
 	switch currentToken.Type {
 	case lexer.EqualToken:
-		p.eat() // eat '='
-		value := p.parseExpression()
-		p.expect(lexer.SemicolonToken, "expected ';' after expression")
+		parser.eat() // eat '='
+		value := parser.parseExpression()
+		parser.expect(lexer.SemicolonToken, "expected ';' after expression")
 		return &ast.VarDeclNode{Name: name.Value, Value: value}
 
 	case lexer.SemicolonToken:
-		p.expect(lexer.SemicolonToken, "expected ';' after variable declaration")
+		parser.expect(lexer.SemicolonToken, "expected ';' after variable declaration")
 		return &ast.VarDeclNode{Name: name.Value, Value: nil}
 	}
 
 	panic("unexpected token: " + currentToken.String())
 }
 
-func (p *Parser) parseFuncDecl() ast.ASTNode {
-	p.eat() // eat 'func'
-	name := p.expect(lexer.IdentifierToken, "expected function name after 'func'")
-	p.expect(lexer.LParenToken, "expected '(' after function name")
+func (parser *Parser) parseFuncDecl() ast.ASTNode {
+    parser.eat() // eat 'func'
+    name := parser.expect(lexer.IdentifierToken, "expected function name after 'func'")
 
-	// Parse parameters
-	var params []string
-	for t := p.peek(); t != nil && t.Type != lexer.RParenToken; t = p.peek() {
-		paramName := p.expect(lexer.IdentifierToken, "expected parameter name")
-		params = append(params, paramName.Value)
+    // parse the literal starting from '('
+    literal := parser.parseFunctionLiteral()
 
-		if p.peek().Type == lexer.CommaToken {
-			p.eat() // eat ','
-		}
-	}
-
-	p.expect(lexer.RParenToken, "expected ')' after parameters")
-	p.expect(lexer.LBraceToken, "expected '{' before function body")
-
-	// Parse body as statements
-	var statements []ast.ASTNode
-	for t := p.peek(); t != nil && t.Type != lexer.RBraceToken; t = p.peek() {
-		statements = append(statements, p.parseStatement())
-	}
-
-	p.expect(lexer.RBraceToken, "expected '}' after function body")
-
-	return &ast.FunctionDeclNode{
-		Name:       name.Value,
-		Arguments:  params,
-		Statements: statements,
-	}
+    // wrap it inside a var decl node
+    return &ast.VarDeclNode{
+        Name:  name.Value,
+        Value: literal,
+    }
 }
+

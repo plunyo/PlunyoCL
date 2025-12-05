@@ -105,6 +105,10 @@ func (parser *Parser) parsePrimary() ast.ASTNode {
 	}
 
 	switch token.Type {
+
+	case lexer.FuncToken:
+		return parser.parseFunctionLiteral()
+
 	case lexer.NumberToken:
 		parser.eat()
 		val := token.Value
@@ -154,7 +158,7 @@ func (parser *Parser) parseFunctionCall() ast.ASTNode {
 
 	if parser.peek() != nil && parser.peek().Type == lexer.LParenToken {
 		parser.eat() // eat '('
-		
+
 		functionCallNode := &ast.FunctionCallNode{
 			Callee:    identifier,
 			Arguments: []ast.ASTNode{},
@@ -175,4 +179,35 @@ func (parser *Parser) parseFunctionCall() ast.ASTNode {
 	}
 
 	return identifier
+}
+
+func (parser *Parser) parseFunctionLiteral() ast.ASTNode {
+	parser.expect(lexer.FuncToken, "expected 'func'")
+
+	parser.expect(lexer.LParenToken, "expected '(' after func")
+
+	var params []string
+	for t := parser.peek(); t != nil && t.Type != lexer.RParenToken; t = parser.peek() {
+		paramName := parser.expect(lexer.IdentifierToken, "expected parameter name")
+		params = append(params, paramName.Value)
+
+		if parser.peek().Type == lexer.CommaToken {
+			parser.eat()
+		}
+	}
+
+	parser.expect(lexer.RParenToken, "expected ')' after parameters")
+	parser.expect(lexer.LBraceToken, "expected '{' before function body")
+
+	var body []ast.ASTNode
+	for t := parser.peek(); t != nil && t.Type != lexer.RBraceToken; t = parser.peek() {
+		body = append(body, parser.parseStatement())
+	}
+
+	parser.expect(lexer.RBraceToken, "expected '}' after function body")
+
+	return &ast.FunctionLiteralNode{
+		Arguments: params,
+		Statements: body,
+	}
 }
