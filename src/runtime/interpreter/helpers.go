@@ -16,10 +16,10 @@ func (interpreter *Interpreter) asFloat(val runtime.RuntimeValue) float64 {
 
 func isNumber(val runtime.RuntimeValue) bool {
 	switch val.(type) {
-	case *runtime.IntValue, *runtime.FloatValue:
-		return true
-	default:
-		return false
+		case *runtime.IntValue, *runtime.FloatValue:
+			return true
+		default:
+			return false
 	}
 }
 

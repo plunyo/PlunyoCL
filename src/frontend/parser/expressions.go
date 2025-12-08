@@ -26,7 +26,7 @@ func (parser *Parser) parseComparison() ast.ASTNode {
 			token.Type == lexer.LogicalAndToken || token.Type == lexer.LogicalOrToken {
 
 			parser.eat()
-			right := parser.parseExpression()
+			right := parser.parseAdditive()
 
 			left = &ast.BinaryOpNode{
 				Left:     left,

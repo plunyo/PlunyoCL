@@ -26,6 +26,7 @@ func (interpreter *Interpreter) Evaluate(node ast.ASTNode) runtime.RuntimeValue 
 			return interpreter.evalFuncCall(node)
 		case *ast.FunctionLiteralNode:
 			return &runtime.FunctionValue{Arguments: node.Arguments, Body: node.Body}
+		case *ast.ReturnNode
 		case *ast.LiteralNode[float64]:
 			return &runtime.FloatValue{Value: node.Value}
 		case *ast.LiteralNode[int]:

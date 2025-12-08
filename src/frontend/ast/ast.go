@@ -41,96 +41,104 @@ func pretty(node ASTNode, level int) string {
 	}
 
 	switch n := node.(type) {
-	case *ProgramNode:
-		sb := &strings.Builder{}
-		sb.WriteString(indentStr(level) + "ProgramNode {\n")
-		for _, stmt := range n.Statements {
-			sb.WriteString(pretty(stmt, level+1) + ",\n")
-		}
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
-
-	case *BodyNode:
-		sb := &strings.Builder{}
-		sb.WriteString(indentStr(level) + "BodyNode {\n")
-		for _, stmt := range n.Statements {
-			sb.WriteString(pretty(stmt, level+1) + ",\n")
-		}
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
-
-	case *VarDeclNode:
-		return formatNode("VarDeclNode", level, map[string]ASTNode{
-			"Name":  &IdentifierNode{Name: n.Name},
-			"Value": n.Value,
-		})
-
-	case *AssignmentNode:
-		return formatNode("AssignmentNode", level, map[string]ASTNode{
-			"Name":  &IdentifierNode{Name: n.Name},
-			"Value": n.Value,
-		})
-
-	case *FunctionCallNode:
-		sb := &strings.Builder{}
-		sb.WriteString(indentStr(level) + "FunctionCallNode {\n")
-		sb.WriteString(indentStr(level+1) + "Callee: " + n.Callee.String() + "\n")
-		sb.WriteString(indentStr(level+1) + "Arguments: [")
-		for i, arg := range n.Arguments {
-			if i > 0 {
-				sb.WriteString(", ")
+		case *ProgramNode:
+			sb := &strings.Builder{}
+			sb.WriteString(indentStr(level) + "ProgramNode {\n")
+			for _, stmt := range n.Statements {
+				sb.WriteString(pretty(stmt, level+1) + ",\n")
 			}
-			sb.WriteString(arg.String())
-		}
-		sb.WriteString("]\n")
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
+			sb.WriteString(indentStr(level) + "}")
+			return sb.String()
 
-	case *FunctionLiteralNode:
-		sb := &strings.Builder{}
-		sb.WriteString(indentStr(level) + "FunctionDeclNode {\n")
-		sb.WriteString(indentStr(level+1) + "Arguments: [")
-		for i, arg := range n.Arguments {
-			if i > 0 {
-				sb.WriteString(", ")
+		case *BodyNode:
+			sb := &strings.Builder{}
+			sb.WriteString(indentStr(level) + "BodyNode {\n")
+			for _, stmt := range n.Statements {
+				sb.WriteString(pretty(stmt, level+1) + ",\n")
 			}
-			sb.WriteString(arg)
-		}
-		sb.WriteString("]\n")
-		sb.WriteString(indentStr(level+1) + "Statements:\n")
-		for _, stmt := range n.Body.Statements {
-			sb.WriteString(pretty(stmt, level+2) + ",\n")
-		}
-		sb.WriteString(indentStr(level) + "}")
-		return sb.String()
+			sb.WriteString(indentStr(level) + "}")
+			return sb.String()
 
-	case *BinaryOpNode:
-		return formatNode("BinaryOpNode", level, map[string]ASTNode{
-			"Operator": &LiteralNode[string]{Value: n.Operator},
-			"Left":     n.Left,
-			"Right":    n.Right,
-		})
+		case *VarDeclNode:
+			return formatNode("VarDeclNode", level, map[string]ASTNode{
+				"Name":  &IdentifierNode{Name: n.Name},
+				"Value": n.Value,
+			})
 
-	case *UnaryOpNode:
-		return formatNode("UnaryOpNode", level, map[string]ASTNode{
-			"Operator": &LiteralNode[string]{Value: n.Operator},
-			"Operand":  n.Operand,
-		})
+		case *AssignmentNode:
+			return formatNode("AssignmentNode", level, map[string]ASTNode{
+				"Name":  &IdentifierNode{Name: n.Name},
+				"Value": n.Value,
+			})
 
-	case *LiteralNode[int]:
-		return indentStr(level) + fmt.Sprintf("IntLiteralNode { Value: %v }", n.Value)
+		case *FunctionCallNode:
+			sb := &strings.Builder{}
 
-	case *LiteralNode[float64]:
-		return indentStr(level) + fmt.Sprintf("FloatLiteralNode { Value: %v }", n.Value)
+			sb.WriteString(indentStr(level) + "FunctionCallNode {\n")
+			sb.WriteString(indentStr(level+1) + "Callee: " + n.Callee.String() + "\n")
+			sb.WriteString(indentStr(level+1) + "Arguments: [")
 
-	case *LiteralNode[string]:
-		return indentStr(level) + `StringLiteralNode { Value: "` + n.Value + `" }`
+			for i, arg := range n.Arguments {
+				if i > 0 {
+					sb.WriteString(", ")
+				}
+				sb.WriteString(arg.String())
+			}
 
-	case *IdentifierNode:
-		return indentStr(level) + "IdentifierNode { Name: " + n.Name + " }"
+			sb.WriteString("]\n")
+			sb.WriteString(indentStr(level) + "}")
+			
+			return sb.String()
 
-	default:
-		return indentStr(level) + node.String()
+		case *FunctionLiteralNode:
+			sb := &strings.Builder{}
+			sb.WriteString(indentStr(level) + "FunctionDeclNode {\n")
+			sb.WriteString(indentStr(level+1) + "Arguments: [")
+			for i, arg := range n.Arguments {
+				if i > 0 {
+					sb.WriteString(", ")
+				}
+				sb.WriteString(arg)
+			}
+			sb.WriteString("]\n")
+			sb.WriteString(indentStr(level+1) + "Statements:\n")
+
+			for _, stmt := range n.Body.Statements {
+				sb.WriteString(pretty(stmt, level+2) + ",\n")
+			}
+
+			sb.WriteString(indentStr(level) + "}")
+			return sb.String()
+		case *ReturnNode:
+			return indentStr(level) + "ReturnNode { Value: " + n.Value.String() + " }"
+
+		case *BinaryOpNode:
+			return formatNode("BinaryOpNode", level, map[string]ASTNode{
+				"Operator": &LiteralNode[string]{Value: n.Operator},
+				"Left":     n.Left,
+				"Right":    n.Right,
+			})
+
+		case *UnaryOpNode:
+			return formatNode("UnaryOpNode", level, map[string]ASTNode{
+				"Operator": &LiteralNode[string]{Value: n.Operator},
+				"Operand":  n.Operand,
+			})
+
+		case *LiteralNode[int]:
+			return indentStr(level) + fmt.Sprintf("IntLiteralNode { Value: %v }", n.Value)
+
+		case *LiteralNode[float64]:
+			return indentStr(level) + fmt.Sprintf("FloatLiteralNode { Value: %v }", n.Value)
+
+		case *LiteralNode[string]:
+			return indentStr(level) + `StringLiteralNode { Value: "` + n.Value + `" }`
+
+		case *IdentifierNode:
+			return indentStr(level) + "IdentifierNode { Name: " + n.Name + " }"
+
+		default:
+			return indentStr(level) + node.String()
 	}
 }
 
@@ -188,6 +196,9 @@ func (f *FunctionLiteralNode) String() string { return pretty(f, 0) }
 type ReturnNode struct {
 	Value ASTNode
 }
+
+func (r *ReturnNode) Type() NodeType { return ReturnNodeType}
+func (r *ReturnNode) String() string { return pretty(r, 0) }
 
 type BinaryOpNode struct {
 	Left, Right ASTNode

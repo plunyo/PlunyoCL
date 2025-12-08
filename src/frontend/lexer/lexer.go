@@ -210,18 +210,22 @@ func (lexer *Lexer) Tokenize() []Token {
 		default:
 			if isDigit(lexer.currentChar) {
 				var b strings.Builder
+				
 				for isDigit(lexer.currentChar) {
 					b.WriteByte(lexer.currentChar)
 					lexer.Advance()
 				}
+
 				if lexer.currentChar == '.' && isDigit(lexer.Peek()) {
 					b.WriteByte('.')
 					lexer.Advance()
+
 					for isDigit(lexer.currentChar) {
 						b.WriteByte(lexer.currentChar)
 						lexer.Advance()
 					}
 				}
+
 				add(NumberToken, b.String())
 				continue
 			}

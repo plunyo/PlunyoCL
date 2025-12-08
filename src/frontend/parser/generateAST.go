@@ -5,37 +5,39 @@ import (
 	"pcl/src/frontend/lexer"
 )
 
-func (p *Parser) GenerateAST() ast.ASTNode {
+func (parser *Parser) GenerateAST() ast.ASTNode {
 	program := &ast.ProgramNode{Statements: []ast.ASTNode{}}
 
-	for t := p.peek(); t != nil && t.Type != lexer.EOFToken; t = p.peek() {
-		program.Statements = append(program.Statements, p.parseStatement())
+	for t := parser.peek(); t != nil && t.Type != lexer.EOFToken; t = parser.peek() {
+		program.Statements = append(program.Statements, parser.parseStatement())
 	}
 
 	return program
 }
 
-func (p *Parser) parseStatement() ast.ASTNode {
-	tok := p.peek()
+func (parser *Parser) parseStatement() ast.ASTNode {
+	tok := parser.peek()
 	if tok == nil {
 		panic("unexpected end of input")
 	}
 
 	switch tok.Type {
 	case lexer.VarToken:
-		return p.parseVarDecl()
+		return parser.parseVarDecl()
 	case lexer.FuncToken:
-		return p.parseFuncDecl()
+		return parser.parseFuncDecl()
+	case lexer.ReturnToken:
+		return parser.parseReturnStatement()
 	case lexer.LBraceToken:
-		return p.parseBody()
+		return parser.parseBody()
 	case lexer.IdentifierToken:
-		if p.peekAhead(1) != nil && p.peekAhead(1).Type == lexer.EqualToken {
-			return p.parseAssignment()
+		if parser.peekAhead(1) != nil && parser.peekAhead(1).Type == lexer.EqualToken {
+			return parser.parseAssignment()
 		}
 
-		expr := p.parseExpression()
-		if p.peek() != nil && p.peek().Type == lexer.SemicolonToken {
-			p.eat() // eat ';'
+		expr := parser.parseExpression()
+		if parser.peek() != nil && parser.peek().Type == lexer.SemicolonToken {
+			parser.eat() // eat ';'
 		}
 		
 		return expr
@@ -44,14 +46,14 @@ func (p *Parser) parseStatement() ast.ASTNode {
 	}
 }
 
-func (p *Parser) parseBody() ast.ASTNode {
-	p.eat() // eat '{'
+func (parser *Parser) parseBody() ast.ASTNode {
+	parser.eat() // eat '{'
 	block := &ast.BodyNode{Statements: []ast.ASTNode{}}
 
-	for t := p.peek(); t != nil && t.Type != lexer.RBraceToken; t = p.peek() {
-		block.Statements = append(block.Statements, p.parseStatement())
+	for t := parser.peek(); t != nil && t.Type != lexer.RBraceToken; t = parser.peek() {
+		block.Statements = append(block.Statements, parser.parseStatement())
 	}
 
-	p.eat() // eat '}'
+	parser.eat() // eat '}'
 	return block
 }
