@@ -15,6 +15,7 @@ const (
 	BooleanValueType
 	NilValueType
 	FunctionValueType
+	ReturnValueType
 )
 
 // interface
@@ -69,6 +70,16 @@ type NilValue struct{}
 func (v *NilValue) Type() ValueType { return NilValueType }
 func (v *NilValue) String() string {
 	return "NilValue { Value: nil }"
+}
+
+// reutrn value
+type ReturnValue struct {
+	Value RuntimeValue
+}
+
+func (r *ReturnValue) Type() ValueType { return ReturnValueType }
+func (r *ReturnValue) String() string {
+	return fmt.Sprintf("ReturnValue { %s }", r.Value.String())
 }
 
 // function

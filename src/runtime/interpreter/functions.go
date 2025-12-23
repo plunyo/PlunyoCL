@@ -3,37 +3,46 @@ package interpreter
 import (
 	"pcl/src/frontend/ast"
 	"pcl/src/runtime"
+	"strconv"
 )
 
 
 func (interpreter *Interpreter) evalFuncCall(node *ast.FunctionCallNode) runtime.RuntimeValue {
-	funcVal := interpreter.Evaluate(node.Callee)
+    funcVal := interpreter.Evaluate(node.Callee)
 
-	function, ok := funcVal.(*runtime.FunctionValue)
-	if !ok {
-		panic("cannot call non-function value")
-	}
+    function, ok := funcVal.(*runtime.FunctionValue)
+    if !ok {
+        panic("cannot call non-function value")
+    }
 
-	args := make([]runtime.RuntimeValue, len(node.Arguments))
-	for i, arg := range node.Arguments {
-		args[i] = interpreter.Evaluate(arg)
-	}
+    args := make([]runtime.RuntimeValue, len(node.Arguments))
+    for i, arg := range node.Arguments {
+        args[i] = interpreter.Evaluate(arg)
+    }
 
-	if len(args) != len(function.Arguments) {
-		panic("function expects " + string(rune(len(function.Arguments))) + " arguments, got " + string(rune(len(args))))
-	}
+    if len(args) != len(function.Arguments) {
+        panic("function expects " +
+            strconv.Itoa(len(function.Arguments)) +
+            " arguments, got " +
+            strconv.Itoa(len(args)))
+    }
 
-	prevScope := interpreter.currentScope
-	interpreter.currentScope = runtime.NewScope(prevScope)
+    prevScope := interpreter.currentScope
+    interpreter.currentScope = runtime.NewScope(prevScope)
 
-	// geniusely make the params into variables
-	for i, param := range function.Arguments {
-		interpreter.currentScope.SetVariable(param, args[i])
-	}
+    for i, param := range function.Arguments {
+        interpreter.currentScope.SetVariable(param, args[i])
+    }
 
-	result := interpreter.evalBody(function.Body)
+    result := interpreter.evalBody(function.Body)
 
-	interpreter.currentScope = prevScope
+    interpreter.currentScope = prevScope
 
-	return result
+    // this part is the money shot brochacho
+    if ret, ok := result.(*runtime.ReturnValue); ok {
+        return ret.Value
+    }
+
+    return result
 }
+

@@ -26,7 +26,8 @@ func (interpreter *Interpreter) Evaluate(node ast.ASTNode) runtime.RuntimeValue 
 			return interpreter.evalFuncCall(node)
 		case *ast.FunctionLiteralNode:
 			return &runtime.FunctionValue{Arguments: node.Arguments, Body: node.Body}
-		case *ast.ReturnNode
+		case *ast.ReturnNode:
+			return &runtime.ReturnValue{Value: interpreter.Evaluate(node.Value)}
 		case *ast.LiteralNode[float64]:
 			return &runtime.FloatValue{Value: node.Value}
 		case *ast.LiteralNode[int]:
@@ -43,19 +44,28 @@ func (interpreter *Interpreter) evalProgram(programNode *ast.ProgramNode) runtim
 
 	for _, stmt := range programNode.Statements {
 		lastVal = interpreter.Evaluate(stmt)
+
+		if _, ok := lastVal.(*runtime.ReturnValue); ok {
+            panic("return outside function")
+        }
 	}
 
 	return lastVal
 }
 
 func (interpreter *Interpreter) evalBody(blockNode *ast.BodyNode) runtime.RuntimeValue {
-	var lastVal runtime.RuntimeValue = &runtime.NilValue{}
-	interpreter.EnterScope()
+    interpreter.EnterScope()
+    defer interpreter.ExitScope()
 
-	for _, stmt := range blockNode.Statements {
-		lastVal = interpreter.Evaluate(stmt)
-	}
+	var result runtime.RuntimeValue
 
-	interpreter.ExitScope()
-	return lastVal
+    for _, stmt := range blockNode.Statements {
+        result = interpreter.Evaluate(stmt)
+
+        if _, ok := result.(*runtime.ReturnValue); ok {
+            return result
+        }
+    }
+
+    return result
 }
