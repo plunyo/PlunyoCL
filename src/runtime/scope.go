@@ -1,5 +1,7 @@
 package runtime
 
+import "strings"
+
 type Scope struct {
 	Parent    *Scope
 	variables map[string]RuntimeValue
@@ -42,10 +44,19 @@ func (scope *Scope) HasVariable(name string) bool {
 }
 
 func (scope *Scope) String() string {
-	result := "Scope {\n"
+	var builder strings.Builder
+
+	builder.WriteString("Scope {\n")
+
 	for name, value := range scope.variables {
-		result += "  " + name + ": " + value.String() + "\n"
+		builder.WriteString("  ")
+		builder.WriteString(name)
+		builder.WriteString(": ")
+		builder.WriteString(value.String())
+		builder.WriteByte('\n')
 	}
-	result += "}"
-	return result
+
+	builder.WriteByte('}')
+
+	return builder.String()
 }

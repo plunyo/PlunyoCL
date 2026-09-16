@@ -1,5 +1,6 @@
-add = func(a, b) {
+var add = func(a, b) {
     return a + b;
 };
 
 var x = add(5, 3);
+var y = 12;
